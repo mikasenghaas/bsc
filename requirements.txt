@@ -1,3 +1,7 @@
-torch
-scipy
 numpy
+scipy
+torch
+torchvision
+huggingface
+matplotlib
+tqdm
