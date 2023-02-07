@@ -1,5 +1,9 @@
 #!/bin/bash
 
+RED="\033[0;31m"
+GREEN="\033[0;32m"
+NC='\033[0m'
+
 # install and setup pyenv if not installed
 if ! command -v pyenv &> /dev/null
 then
@@ -11,9 +15,16 @@ then
   echo 'eval "$(pyenv init -)"' >> ~/.bashrc
   exit
 fi
+printf "${GREEN}Success: ${NC}Pyenv installed\n"
 
 # setup virtualenv
 pyenv virtualenv 3.10 bsc
 
 # get requirements
 pip install -r requirements.txt
+
+# make bash scripts executable
+chmod +x setup
+chmod +x run
+
+printf "${GREEN}Success: ${NC}Environment setup\n"
