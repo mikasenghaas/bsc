@@ -2,6 +2,7 @@ numpy
 scipy
 torch
 torchvision
+pytorchvideo
 huggingface
 matplotlib
 tqdm
