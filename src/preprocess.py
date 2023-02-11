@@ -6,15 +6,7 @@ import os
 from tqdm import trange
 
 from config import *
-from utils import (
-    clip_video,
-    end_task,
-    get_label,
-    load_annotations,
-    load_metadata,
-    load_video,
-    start_task,
-)
+from utils import *
 
 def main():
     """
@@ -44,25 +36,25 @@ def main():
         meta : dict = load_metadata(video_path)
         duration : int = eval(meta['duration'])
 
-        # load video and meta information
-        video = load_video(video_path)
+        # meta information
         annotations : Annotation = load_annotations(annotation_path)
 
         # iterate over clips
+        CLIP_LENGTH = NUM_FRAMES // FPS
         pbar = trange(0, int(duration)-CLIP_LENGTH, CLIP_LENGTH)
         total_clips = (int(duration)-CLIP_LENGTH) // CLIP_LENGTH
         for clip_num, start_time in enumerate(pbar):
             pbar.set_description(f"Extracting {directory}.MOV ({clip_num+1}/{total_clips})")
-            end_time = start_time+CLIP_LENGTH
 
             # extract label depending on clip time
             label = get_label(start_time + CLIP_LENGTH//2, annotations)
             destination_path = f"{PROCESSED_DATA_PATH}/{label}/{date}_{str(clip_num).zfill(2)}.mov"
+            mkdir(destination_path)
 
-            # save clip from video according to label and start/ end time
-            clip_video(video, dst=destination_path, start_time=start_time, end_time=end_time)
+            # run ffmpeg
+            ffmpeg_command = f"ffmpeg -loglevel error -ss {start_time} -y -i {video_path} -vf scale=224:224 -t {CLIP_LENGTH} -r 2 {destination_path}"
+            os.system(ffmpeg_command)
 
-        video.close()
         end_task("Processing Raw Videos", start_timer)
 
 if __name__ == "__main__":

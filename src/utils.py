@@ -1,10 +1,11 @@
 # utils.py
 #  by: mika senghaas
 
+import datetime
+import glob
 from multiprocessing import cpu_count
 import os
 import timeit
-import datetime
 
 import ffmpeg
 from moviepy.video.io.VideoFileClip import VideoFileClip
@@ -43,19 +44,6 @@ def load_annotations(filepath : str) -> Annotation:
 
     return targets 
 
-def load_video(src: str):
-    return VideoFileClip(src, audio=False, target_resolution=(1920, 1080))
-
-def clip_video(video: VideoFileClip, dst: str, start_time: int, end_time: int) -> None :
-    assert end_time > start_time, "End Time must be larger thane Start Time"
-    if mkdir(dst):
-        clip = video.subclip(start_time, end_time)
-        clip.write_videofile(dst, 
-                audio=False, 
-                logger=None,
-                codec="libx264", 
-                threads=cpu_count())
-
 def timestamp_to_second(timestamp : str) -> int:
   mm, ss = map(int, timestamp.split(':'))
   return mm * 60 + ss
@@ -71,3 +59,14 @@ def get_label(second_in_video: int, annotations: list[tuple[str, str]]) -> str:
     prev_label = label
 
   return annotations[-1][1]
+
+def load_labels(filepath: str) -> list[str]:
+    return sorted(os.listdir(filepath))
+
+def load_labeled_video_paths(filepath: str):
+    labeled_video_paths = []
+    for filename in glob.iglob(filepath + "/**/*", recursive=True):
+        if filename.find('.') >= 0:
+            label = filename.split('/')[-2]
+            labeled_video_paths.append((filename, label))
+    return sorted(labeled_video_paths)
