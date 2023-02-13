@@ -3,12 +3,12 @@
 
 import datetime
 import glob
-from multiprocessing import cpu_count
 import os
 import timeit
 
 import ffmpeg
-from moviepy.video.io.VideoFileClip import VideoFileClip
+from matplotlib import pyplot as plt
+from matplotlib import animation
 from termcolor import colored
 
 from config import *
@@ -42,7 +42,29 @@ def load_annotations(filepath : str) -> Annotation:
             timestamp, label = line.strip().split(',')
             targets.append((timestamp, label))
 
-    return targets 
+    return targets # type: ignore
+
+def display_video(video_tensor : torch.Tensor, title: str = "Example Sample") -> None:
+    assert video_tensor.ndim == 4, "Number of dimension must be 4"
+    assert video_tensor.shape[1] == 3 , "Expects tensor of shape [T, C, H, W]"
+
+    B, C, H, W = video_tensor.shape
+    video_tensor = video_tensor.view(B, H, W, C)
+
+    # Display the gif using matplotlib's animation module
+    fig, ax = plt.subplots()
+    ax.set_title(title) # type: ignore
+    ax.set_xticks([]) # type: ignore
+    ax.set_yticks([]) # type: ignore
+
+    im = ax.imshow(video_tensor[0]) # type: ignore
+
+    def animate(i):
+        im.set_array(video_tensor[i])
+        return [im]
+
+    a = animation.FuncAnimation(fig, animate, frames=len(video_tensor), interval=500, blit=True)
+    plt.show()
 
 def timestamp_to_second(timestamp : str) -> int:
   mm, ss = map(int, timestamp.split(':'))
