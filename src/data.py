@@ -30,7 +30,7 @@ class TrainData(Dataset):
         video_path, label = self.video_paths[idx]
 
         # load video to tensor
-        video = read_video(video_path) 
+        video = read_video(video_path, pts_unit="sec")
         video_tensor, _, _ = video # (f, h, w, c)
 
         # reorder
