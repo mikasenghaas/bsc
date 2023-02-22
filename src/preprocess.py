@@ -24,13 +24,13 @@ def main():
     start_timer = start_task("Processing Raw Videos", get_timer=True)
 
     # read all directories in raw data folder
-    directories = os.listdir(RAW_DATA_PATH)
+    directories = sorted([d for d in os.listdir(RAW_DATA_PATH) if not d.startswith('.')])
 
     # iterate over all videos
     for date in directories:
-        directory = f"{RAW_DATA_PATH}/{date}"
-        video_path = f"{directory}/video.mov"
-        annotation_path = f"{directory}/annotations"
+        directory = os.path.join(RAW_DATA_PATH, date)
+        video_path = os.path.join(directory, "video.mov")
+        annotation_path = os.path.join(directory, "annotations")
 
         # load metadata
         meta : dict = load_metadata(video_path)
@@ -44,18 +44,18 @@ def main():
         pbar = trange(0, int(duration)-CLIP_LENGTH, CLIP_LENGTH)
         total_clips = (int(duration)-CLIP_LENGTH) // CLIP_LENGTH
         for clip_num, start_time in enumerate(pbar):
-            pbar.set_description(f"Extracting {directory}.MOV ({clip_num+1}/{total_clips})")
+            pbar.set_description(f"Extracting {directory}/video.mov ({clip_num+1}/{total_clips})")
 
             # extract label depending on clip time
             label = get_label(start_time + CLIP_LENGTH//2, annotations)
-            destination_path = f"{PROCESSED_DATA_PATH}/{label}/{date}_{str(clip_num).zfill(2)}.mov"
-            mkdir(destination_path)
+            destination_dir = os.path.join(PROCESSED_DATA_PATH, label, f"{date}_{clip_num}")
+            mkdir(destination_dir)
 
             # run ffmpeg
-            ffmpeg_command = f"ffmpeg -loglevel error -ss {start_time} -y -i {video_path} -vf scale=224:224 -t {CLIP_LENGTH} -r 2 {destination_path}"
+            ffmpeg_command = f"ffmpeg -loglevel error -ss {start_time} -y -i {video_path} -vf scale=224:224 -t {CLIP_LENGTH} -r 2 {destination_dir}/%0d.jpg"
             os.system(ffmpeg_command)
 
-        end_task("Processing Raw Videos", start_timer)
+    end_task("Processing Raw Videos", start_timer)
 
 if __name__ == "__main__":
     main()
