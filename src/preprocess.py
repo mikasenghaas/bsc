@@ -37,7 +37,7 @@ def main():
         duration : int = eval(meta['duration'])
 
         # meta information
-        annotations : Annotation = load_annotations(annotation_path)
+        annotations  = load_annotations(annotation_path)
 
         # iterate over clips
         CLIP_LENGTH = NUM_FRAMES // FPS
@@ -48,11 +48,11 @@ def main():
 
             # extract label depending on clip time
             label = get_label(start_time + CLIP_LENGTH//2, annotations)
-            destination_dir = os.path.join(PROCESSED_DATA_PATH, label, f"{date}_{clip_num}")
+            destination_dir = os.path.join(PROCESSED_DATA_PATH, label, f"{date}_{str(clip_num).zfill(2)}")
             mkdir(destination_dir)
 
             # run ffmpeg
-            ffmpeg_command = f"ffmpeg -loglevel error -ss {start_time} -y -i {video_path} -vf scale=224:224 -t {CLIP_LENGTH} -r 2 {destination_dir}/%0d.jpg"
+            ffmpeg_command = f"ffmpeg -loglevel error -ss {start_time} -y -i {video_path} -vf scale=224:224 -t {CLIP_LENGTH} -r 2 {destination_dir}/%02d.jpg"
             os.system(ffmpeg_command)
 
     end_task("Processing Raw Videos", start_timer)
