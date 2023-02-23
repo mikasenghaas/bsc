@@ -10,8 +10,10 @@ PROCESSED_DATA_PATH : str   = os.path.join("src", "data", "processed")
 MODEL_PATH  : str           = os.path.join("src", "models")
 
 # PREPROCESS
-HEIGHT      : int           = 224 # image height
-WIDTH       : int           = 224 # image width
+NUM_FRAMES  : int           = 16
+FPS         : int           = 2
+HEIGHT      : int           = 224
+WIDTH       : int           = 224
 MEAN        : torch.Tensor  = torch.tensor([0.485, 0.456, 0.406])
 STD         : torch.Tensor  = torch.tensor([0.229, 0.224, 0.225])
 
