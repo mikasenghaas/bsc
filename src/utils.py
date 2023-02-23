@@ -9,6 +9,7 @@ import os
 import timeit
 
 import ffmpeg
+import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib import animation
 from termcolor import colored
@@ -74,6 +75,9 @@ def normalise_image(image_tensor : torch.Tensor) -> torch.Tensor:
 
 def unnormalise_image(image_tensor : torch.Tensor) -> torch.Tensor:
     return (image_tensor * STD[:, None, None] + MEAN[:, None, None])
+
+def get_summary(args):
+    return pd.Series(args)
 
 def show_image(image_tensor : torch.Tensor, title : str | None= None, unnormalise : bool = False, ax : plt.Axes = None, show : bool = False):
     assert image_tensor.ndim == 3, "Number of dimension must be 3"

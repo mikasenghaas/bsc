@@ -73,13 +73,15 @@ def main():
 
     # train model
     start_task("Starting Training")
+    print(get_summary(vars(args)))
     trained_model = train(model, train_loader, criterion, optim, scheduler, args.max_epochs)
 
     # save model
     if args.save:
-        start_task("Saving Model")
-        mkdir(MODEL_PATH)
-        save_path = os.path.join(MODEL_PATH, str(datetime.datetime.now()))
+        filepath = os.path.join(MODEL_PATH, args.model)
+        mkdir(filepath)
+        save_path = os.path.join(filepath, str(datetime.datetime.now()))
+        start_task(f"Saving Model to {save_path}")
         torch.save(trained_model.state_dict(), save_path)
 
     end_task("Training Done", start_timer)
