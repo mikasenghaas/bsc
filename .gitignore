@@ -1,9 +1,9 @@
 # Custom
 **/data
+**/models
+*/test.py
+*/*.ipynb
 .DS_Store
-
-**/test.py
-**/*.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
