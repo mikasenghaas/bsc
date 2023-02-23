@@ -1,25 +1,27 @@
 # model.py
 #  by: mika senghaas
 
-import torch
-import torch.nn as nn
-from torchvision.transforms.functional import normalize
-from transformers import VideoMAEForVideoClassification, VideoMAEImageProcessor
-from transformers import logging
-
-from pytorchvideo.transforms import Normalize
-
-from torchvision.transforms import (
-     Compose,
-     Lambda,
-)
+from torch import nn
+from torchvision import models
 
 from config import *
-from utils import load_labels
+from utils import *
 
-logging.set_verbosity_error()
+class ResNet(nn.Module):
+    def __init__(self, num_classes : int):
+        super().__init__()
+        self.resnet = models.resnet18(weights="DEFAULT")
+        self.resnet.fc = nn.Linear(512, num_classes)
 
-class VideoClassifier(nn.Module):
+    def forward(self, inputs):
+        return self.resnet(inputs)
+
+MODELS = { 'resnet': ResNet, }
+
+
+"""
+
+class VideoMAE(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
@@ -49,11 +51,9 @@ class VideoClassifier(nn.Module):
                 ignore_mismatched_sizes=True)
 
     def forward(self, x):
-        """
         Forward pass to classify a video sequence to a location label.
 
         video : ArrayLike[B, T, C, H, W]
-        """
         # process badge of images
         B,T,C,H,W = x.shape
         inputs = torch.empty(B, T, C, H, W)
@@ -68,3 +68,4 @@ class VideoClassifier(nn.Module):
 
     def predict(self, x):
         pass
+"""
