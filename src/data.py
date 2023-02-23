@@ -18,7 +18,7 @@ class ImageDataset(Dataset):
 
         # image paths
         self.image_paths = load_labelled_image_paths(filepath)
-        self.num_classes = len(self.image_paths)
+        self.num_samples = len(self.image_paths)
         random.shuffle(self.image_paths)
 
         # transforms
@@ -26,6 +26,7 @@ class ImageDataset(Dataset):
 
         # labels
         self.labels = load_labels(PROCESSED_DATA_PATH)
+        self.num_classes = len(self.labels)
         self.label2id = { l: i for i, l in enumerate(self.labels) }
         self.id2label = { i: l for i, l in enumerate(self.labels) }
 
@@ -49,11 +50,11 @@ class ImageDataset(Dataset):
 
     def __len__(self):
         if self.split == "train":
-            return int(self.num_classes * TRAIN_RATIO)
+            return int(self.num_samples * TRAIN_RATIO)
         elif self.split == "val":
-            return int(self.num_classes * VAL_RATIO)
+            return int(self.num_samples * VAL_RATIO)
         elif self.split == "test":
-            return int(self.num_classes * TEST_RATIO)
+            return int(self.num_samples * TEST_RATIO)
         else:
             raise Exception
 
@@ -68,6 +69,7 @@ class VideoDataset(Dataset):
 
         # labels
         self.labels = load_labels(PROCESSED_DATA_PATH)
+        self.num_classes = len(self.labels)
         self.label2id = { l: i for i, l in enumerate(self.labels) }
         self.id2label = { i: l for i, l in enumerate(self.labels) }
 
