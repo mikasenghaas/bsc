@@ -2,47 +2,76 @@
 #  by: mika senghaas
 
 import numpy as np
+import seaborn as sns
+from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
+from torch.nn.functional import softmax
+
+from sklearn.metrics import classification_report, confusion_matrix
 
 from config import *
-from data import TrainData
-from model import VideoClassifier
 from utils import *
+from data import *
+from model import *
 
 def main():
-    # get all saved models
-    models = os.listdir(MODEL_PATH)
-    sorted_models = sorted(models)
-    most_recent = sorted_models[-1]
+    # get parser
+    parser = load_evaluate_parser()
+    args = parser.parse_args()
 
-    # load model from most recent checkpoint
-    model = VideoClassifier()
-    model.load_state_dict(torch.load(f"{MODEL_PATH}/{most_recent}"))
+    # get model and data
+    match args.model:
+        case 'resnet':
+            test_data = ImageDataset(PROCESSED_DATA_PATH, split="test")
+            model = ResNet(test_data.num_classes)
+        case _:
+            # default case
+            test_data = ImageDataset(PROCESSED_DATA_PATH, split="test")
+            model = ResNet(test_data.num_classes)
+
+    # get filepath
+    start_task(f"Loading {args.model}")
+    if not args.filepath:
+        filepaths = sorted(glob.glob(os.path.join(MODEL_PATH, args.model, "*")))
+        filepath = filepaths[-1]
+    else:
+        filepath = args.filepath
+
+    # load model
+    try:
+        model.load_state_dict(torch.load(filepath))
+    except:
+        raise Exception(f"No trained model found at {filepath}")
+    start_task(f"Found at {filepath}")
 
     # set model into evaluation mode
+    model.to(DEVICE)
     model.eval()
 
     # load data and mini-batch data
-    data = TrainData(filepath=PROCESSED_DATA_PATH, model=model)
-    loader = DataLoader(data, batch_size=4) 
+    loader = DataLoader(test_data, batch_size=BATCH_SIZE) 
 
     # load and predict on test split
-    predicted_labels = []
-    true_labels = []
-    for x, y in loader:
-        # predict on all samples
-        logits = model(x)
+    y_pred = np.empty(0)
+    y_true = np.empty(0)
+    for inputs, labels in loader:
+        inputs = inputs.to(DEVICE)
+        labels = labels.to(DEVICE)
+
+        # predict test samples
+        logits = model(inputs)
         preds = logits.argmax(-1)
 
-        for i in range(len(y)):
-            predicted_labels.append(preds[i].item())
-            true_labels.append(y[i].item())
+        y_pred = np.concatenate((y_pred, preds.cpu()))
+        y_true = np.concatenate((y_true, labels.cpu()))
 
-    predicted_labels = np.array(predicted_labels)
-    true_labels = np.array(true_labels)
+    # compute classification report and confusion matrix
+    report = classification_report(y_true, y_pred)
+    conf_matrix = confusion_matrix(y_true, y_pred)
 
-    accuracy_score = np.mean(predicted_labels == true_labels)
-    print(f"Accuracy Score: {round(100 * accuracy_score, 2)}%")
+    print(report)
+    sns.heatmap(pd.DataFrame(conf_matrix), annot=True)
+    plt.show()
 
 if __name__ == "__main__":
     main()
