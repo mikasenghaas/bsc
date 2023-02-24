@@ -95,7 +95,7 @@ def main():
         wandb.define_metric("Training Loss", summary="min")
         wandb.define_metric("Validation Loss", summary="min")
         wandb.define_metric("Training Accuracy", summary="max")
-        wandb.define_metric("Test Accuracy", summary="max")
+        wandb.define_metric("Validation Accuracy", summary="max")
 
     # load data 
     start_task("Initialising Data and Model")
