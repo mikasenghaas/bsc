@@ -9,36 +9,54 @@ import os
 import timeit
 
 import ffmpeg
+import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib import animation
 from termcolor import colored
 import torch
+from torch.nn.functional import softmax
 from torchvision import transforms
+from sklearn.metrics import classification_report, confusion_matrix
 
 from config import *
 from model import MODELS
 from utils import *
 
-def load_train_parser() -> argparse.ArgumentParser:
+def load_train_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("-M", "--model", type=str, choices=MODELS.keys(), help="Choose Model to train", required=True)
     parser.add_argument("--max-epochs", type=int, default=MAX_EPOCHS, help="Maximum Epochs")
-    parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default=DEVICE, help="Training Device")
-    parser.add_argument("--batch_size", type=int, default=BATCH_SIZE, help="Batch Size in Training and Validation Loader")
+    parser.add_argument("--batch-size", type=int, default=BATCH_SIZE, help="Batch Size in Training and Validation Loader")
     parser.add_argument("--lr", type=float, default=LR, help="Learning Rate for Optimiser")
     parser.add_argument("--step-size", type=int, default=STEP_SIZE, help="Step Size for Schedulr")
     parser.add_argument("--gamma", type=float, default=GAMMA, help="Gamma for Scheduler")
-    parser.add_argument("--save", action=argparse.BooleanOptionalAction, default=SAVE, help="Whether to save the Model after Training")
+    parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default=DEVICE, help="Training Device")
+    parser.add_argument("--log", action=argparse.BooleanOptionalAction, default=LOG, help="Whether to log the run to WANDB")
+    parser.add_argument("--evaluate", action=argparse.BooleanOptionalAction, help="Whether to compute evaluation metrics for trained model")
+    parser.add_argument("--save", action=argparse.BooleanOptionalAction, help="Whether to store the trained model as an artefact")
 
-    return parser
+    args = parser.parse_args()
+    if args.evaluate == None and args.log:
+        args.evaluate = True
+    else:
+        args.evaluate = False
+    if args.save == None and args.log:
+        args.save = True
+    else:
+        args.save = False
 
-def load_evaluate_parser() -> argparse.ArgumentParser:
+    return args
+
+def load_evaluate_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("-M", "--model", type=str, choices=MODELS.keys(), help="Choose Model to train", required=True)
     parser.add_argument("--filepath", type=str, default="", help="Filepath to model. If note chosen, will use most recent")
+    parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default=DEVICE, help="Training Device")
 
-    return parser
+    args = parser.parse_args()
+
+    return args
 
 def mkdir(filepath: str) -> bool:
     if filepath.find('.') >= 0:
@@ -172,3 +190,41 @@ def load_labeled_video_paths(filepath: str):
             labelled_video_paths.append((path, label_paths.split('/')[-1]))
   
     return labelled_video_paths
+
+def get_predictions(model, loader, device):
+    # load and predict on test split
+    y_true, y_pred, y_probs = None, None, None
+    for batch_num, (inputs, labels) in enumerate(loader):
+        inputs = inputs.to(device)
+        labels = labels.to(device)
+
+        # predict test samples
+        logits = model(inputs)
+        probs = softmax(logits, 1).detach() # B, 7
+        preds = logits.argmax(-1)
+
+        if batch_num == 0:
+            y_true = labels.cpu()
+            y_pred = preds.cpu()
+            y_probs = probs.cpu()
+        else:
+            y_true = np.concatenate((y_true, labels.cpu()))
+            y_pred = np.concatenate((y_pred, preds.cpu()))
+            y_probs = np.concatenate((y_probs, probs.cpu()))
+
+    return y_true, y_pred, y_probs
+
+def evaluate_model(model, test_loader, device):
+    id2label = test_loader.dataset.id2label
+
+    y_true, y_pred, _ = get_predictions(model, test_loader, device=device)
+
+    # compute classification report
+    report = classification_report(y_true, y_pred, target_names=id2label.values(), output_dict=True)
+    report = pd.DataFrame(report).transpose().round(2)
+
+    # compute confusion matrix
+    conf_matrix = confusion_matrix(y_true, y_pred)
+    conf_matrix = pd.DataFrame(conf_matrix, index=id2label.values(), columns=id2label.values())
+
+    return { "report": report, "conf_matrix": conf_matrix }
