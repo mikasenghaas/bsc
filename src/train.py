@@ -13,24 +13,25 @@ from data import ImageDataset
 from model import ResNet
 from utils import *
 
-def train(model, train_loader, criterion, optim, scheduler, max_epochs, val_loader=None):
-    model.to(DEVICE)
-    model.train()
+def train(model, train_loader, val_loader, criterion, optim, scheduler, max_epochs, device):
+    model.to(device)
     pbar = tqdm(range(max_epochs))
-    pbar.set_description(f'EPOCH X - BATCH X - LOSS X.XXX - ACC XX.X%')
+    pbar.set_description(f'XXX/XX - Train: X.XXX (XX.X%) - Val: X.XXX (XX.X%)')
+    train_loss, val_loss = 0.0, 0.0
+    train_acc, val_acc = 0.0, 0.0
     for epoch in pbar:
-        running_loss = 0.0
-        running_correct = 0
+        running_loss, running_correct = 0.0, 0
     
+        model.train()
         for batch_num, (inputs, labels) in enumerate(train_loader):
-            inputs = inputs.to(DEVICE)
-            labels = labels.to(DEVICE)
+            inputs = inputs.to(device)
+            labels = labels.to(device)
   
             # zero the parameter gradients
             optim.zero_grad()
   
             logits = model(inputs)
-            _, preds = torch.max(logits, 1)
+            preds = torch.argmax(logits, 1)
             loss = criterion(logits, labels)
   
             # backward + optimize only if in training phase
@@ -38,11 +39,35 @@ def train(model, train_loader, criterion, optim, scheduler, max_epochs, val_load
             optim.step()
             scheduler.step()
 
-            running_loss += loss.item() * inputs.size(0)
-            running_correct += torch.sum(labels == preds)
-  
+            # performance metrics
+            running_loss += loss.item()
+            running_correct += torch.sum(preds == labels)
             samples_seen = (batch_num + 1) * BATCH_SIZE
-            pbar.set_description(f'EPOCH {epoch} - BATCH {batch_num} - LOSS {(running_loss / samples_seen):.3f} - ACC {(running_correct / samples_seen * 100):.1f}%')
+
+            # normalise
+            train_acc = running_correct / samples_seen
+            train_loss = running_loss / samples_seen
+            
+            pbar.set_description(f'{str(epoch).zfill(2)}/{str(batch_num).zfill(3)} - Train: {train_loss:.3f} ({(train_acc * 100):.1f}%) - Val: {val_loss:.3f} ({(val_acc * 100):.1f}%)')
+
+        if val_loader != None:
+            running_loss, running_correct = 0.0, 0
+            model.eval()
+            for batch_num, (inputs, labels) in enumerate(val_loader):
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+      
+                logits = model(inputs)
+                preds = torch.argmax(logits, 1)
+                loss = criterion(logits, labels)
+
+                # accumulate loss and correct predictions
+                running_loss += loss.item()
+                running_correct += torch.sum(labels == preds)
+
+            val_loss = running_loss / len(val_loader.dataset)
+            val_acc = running_correct / len(val_loader.dataset)
+            pbar.set_description(f'{str(epoch).zfill(2)}/{str(batch_num).zfill(3)} - Train: {train_loss:.3f} ({(train_acc * 100):.1f}%) - Val: {val_loss:.3f} ({(val_acc * 100):.1f}%)')
 
     return model
 
@@ -57,14 +82,17 @@ def main():
     match args.model:
         case 'resnet':
             train_data = ImageDataset(filepath=PROCESSED_DATA_PATH, split="train")
+            val_data = ImageDataset(filepath=PROCESSED_DATA_PATH, split="val")
             model = ResNet(train_data.num_classes)
         case _:
             # default case
             train_data = ImageDataset(filepath=PROCESSED_DATA_PATH, split="train")
+            val_data = ImageDataset(filepath=PROCESSED_DATA_PATH, split="val")
             model = ResNet(train_data.num_classes)
 
     # initialise data loader
     train_loader = DataLoader(train_data, batch_size=args.batch_size)
+    val_loader = DataLoader(val_data, batch_size=args.batch_size)
 
     # define loss func, optimiser and lr scheduler
     criterion = nn.CrossEntropyLoss() # pyright: ignore
@@ -74,7 +102,7 @@ def main():
     # train model
     start_task("Starting Training")
     print(get_summary(vars(args)))
-    trained_model = train(model, train_loader, criterion, optim, scheduler, args.max_epochs)
+    trained_model = train(model, train_loader, val_loader, criterion, optim, scheduler, args.max_epochs, args.device)
 
     # save model
     if args.save:
