@@ -1,6 +1,9 @@
 numpy
 torch
 torchvision
-huggingface
+wandb
 matplotlib
+scikit-learn
+matplotlib
+seaborn
 tqdm
