@@ -23,6 +23,15 @@ from config import *
 from model import MODELS
 from utils import *
 
+def load_preprocess_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--max-LENGTH", type=int, default=MAX_LENGTH, help="Maximum number of frames to sample in single clip")
+    parser.add_argument("--fps", type=int, default=FPS, help="Frame rate to sample from")
+
+    args = parser.parse_args()
+    return args
+
+
 def load_train_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("-M", "--model", type=str, choices=MODELS.keys(), help="Choose Model to train", required=True)
