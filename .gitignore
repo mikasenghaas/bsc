@@ -3,6 +3,7 @@
 **/models
 */test.py
 */*.ipynb
+wandb
 .DS_Store
 
 # Byte-compiled / optimized / DLL files
