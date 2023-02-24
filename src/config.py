@@ -10,7 +10,8 @@ PROCESSED_DATA_PATH : str   = os.path.join("src", "data", "processed")
 MODEL_PATH  : str           = os.path.join("src", "models")
 
 # PREPROCESS
-NUM_FRAMES  : int           = 16
+# NUM_FRAMES  : int           = 16
+MAX_LENGTH  : int           = 10 
 FPS         : int           = 2
 HEIGHT      : int           = 224
 WIDTH       : int           = 224
