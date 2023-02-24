@@ -23,11 +23,12 @@ from utils import *
 def load_train_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("-M", "--model", type=str, choices=MODELS.keys(), help="Choose Model to train", required=True)
-    parser.add_argument("--max-epochs", type=int, default=MAX_EPOCHS, help="Choose Maximum Epochs for Training")
-    parser.add_argument("--batch_size", type=int, default=BATCH_SIZE, help="Choose Batch Size for Training")
-    parser.add_argument("--lr", type=float, default=LR, help="Choose Learning Rate For Training")
-    parser.add_argument("--step-size", type=int, default=STEP_SIZE, help="Choose Step Size for Training")
-    parser.add_argument("--gamma", type=float, default=GAMMA, help="Choose Gamma in LR Scheduler for Training")
+    parser.add_argument("--max-epochs", type=int, default=MAX_EPOCHS, help="Maximum Epochs")
+    parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default=DEVICE, help="Training Device")
+    parser.add_argument("--batch_size", type=int, default=BATCH_SIZE, help="Batch Size in Training and Validation Loader")
+    parser.add_argument("--lr", type=float, default=LR, help="Learning Rate for Optimiser")
+    parser.add_argument("--step-size", type=int, default=STEP_SIZE, help="Step Size for Schedulr")
+    parser.add_argument("--gamma", type=float, default=GAMMA, help="Gamma for Scheduler")
     parser.add_argument("--save", action=argparse.BooleanOptionalAction, default=SAVE, help="Whether to save the Model after Training")
 
     return parser
