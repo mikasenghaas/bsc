@@ -30,5 +30,5 @@ BATCH_SIZE  : int           = 16
 LR          : float         = 1e-3
 STEP_SIZE   : int           = 7
 GAMMA       : float         = 0.1
-SAVE        : bool          = False
+LOG         : bool          = False
 FINETUNE    : bool          = True
