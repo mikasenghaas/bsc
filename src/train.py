@@ -37,7 +37,6 @@ def train(model, train_loader, val_loader, criterion, optim, scheduler, args):
             # backward + optimize only if in training phase
             loss.backward()
             optim.step()
-            scheduler.step()
 
             # performance metrics
             running_loss += loss.item()
@@ -79,6 +78,9 @@ def train(model, train_loader, val_loader, criterion, optim, scheduler, args):
             val_acc = running_correct / len(val_loader.dataset)
 
             pbar.set_description(f'{str(epoch).zfill(len(str(args.max_epochs)))}/00 - Train: {train_loss:.3f} ({(train_acc * 100):.1f}%) - Val: {val_loss:.3f} ({(val_acc * 100):.1f}%)')
+
+        # adjust learning rate
+        scheduler.step()
 
     return model
 
