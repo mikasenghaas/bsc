@@ -127,7 +127,7 @@ def main():
     if args.save:
         filepath = os.path.join(MODEL_PATH, args.model)
         mkdir(filepath)
-        save_path = os.path.join(filepath, str(datetime.datetime.now()))
+        save_path = os.path.join(filepath, f"{args.model}.pt")
         start_task(f"Saving Model to {save_path}")
         torch.save(trained_model.state_dict(), save_path)
 
