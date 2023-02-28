@@ -30,9 +30,11 @@ class ImageDataset(Dataset):
         self.label2id = { l: i for i, l in enumerate(self.labels) }
         self.id2label = { i: l for i, l in enumerate(self.labels) }
 
-    def __getitem__(self, idx):
-        if self.split != 'train':
-            idx += int(len(self) * TRAIN_RATIO)
+    def __getitem__(self, idx): # [x1, ..., x10]
+        if self.split == 'val':
+            idx += int(self.num_samples * TRAIN_RATIO)
+        elif self.split == 'test':
+            idx += int(self.num_samples * TRAIN_RATIO) + int(self.num_samples * VAL_RATIO)
 
         image_path, label = self.image_paths[idx]
 
