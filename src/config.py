@@ -32,4 +32,6 @@ LR          : float         = 1e-3
 STEP_SIZE   : int           = 5
 GAMMA       : float         = 0.1
 LOG         : bool          = False
-FINETUNE    : bool          = True
+
+# EVALUATE
+DURATION    : int           = 10

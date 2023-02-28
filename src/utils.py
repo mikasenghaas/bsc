@@ -31,7 +31,6 @@ def load_preprocess_args() -> argparse.Namespace:
     args = parser.parse_args()
     return args
 
-
 def load_train_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("-M", "--model", type=str, choices=MODELS.keys(), help="Choose Model to train", required=True)
@@ -57,10 +56,11 @@ def load_train_args() -> argparse.Namespace:
 
     return args
 
-def load_evaluate_args() -> argparse.Namespace:
+def load_infer_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("-M", "--model", type=str, choices=MODELS.keys(), help="Choose Model to train", required=True)
-    parser.add_argument("--filepath", type=str, default="", help="Filepath to model. If note chosen, will use most recent")
+    parser.add_argument("-M", "--model", type=str, choices=MODELS.keys(), help="Choose model to evaluate", required=True)
+    parser.add_argument("-V", "--version", type=str, default="latest", help="Version of the model. Is either 'latest' or 'vX'")
+    parser.add_argument("--duration", type=int, default=DURATION, help="Length of video clip to evaluate")
     parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default=DEVICE, help="Training Device")
 
     args = parser.parse_args()
@@ -138,15 +138,12 @@ def show_images(image_tensors : torch.Tensor, titles : list[str] | None= None, u
             show_image(image_tensors[idx], title=titles[idx], unnormalise=unnormalise, ax=ax[i, j]) # pyright: ignore
     plt.show()
 
-def show_video(video_tensor : torch.Tensor, title: str | None = None, unnormalise : bool = True):
+def show_video(video_tensor : torch.Tensor, title: str | None = None, unnormalise : bool = True, interval : int = 500):
     assert video_tensor.ndim == 4, "Number of dimension must be 4"
     assert video_tensor.shape[1] == 3 , "Expects tensor of shape [T, C, H, W]"
 
     if unnormalise:
         video_tensor = torch.cat([unnormalise_image(frame).unsqueeze(0) for frame in video_tensor])
-
-    F, C, H, W = video_tensor.shape
-    # video_tensor = video_tensor.view(F, H, W, C)
 
     # Display the gif using matplotlib's animation module
     fig, ax = plt.subplots()
@@ -160,7 +157,7 @@ def show_video(video_tensor : torch.Tensor, title: str | None = None, unnormalis
         im.set_array(transforms.ToPILImage()(video_tensor[i]))
         return [im]
 
-    a = animation.FuncAnimation(fig, animate, frames=len(video_tensor), interval=500, blit=True)
+    a = animation.FuncAnimation(fig, animate, frames=len(video_tensor), interval=interval, blit=True)
     plt.show()
 
 def timestamp_to_second(timestamp : str) -> int:
