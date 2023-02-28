@@ -1,5 +1,6 @@
 # Custom
 **/data
+**/artifacts
 **/models
 */test.py
 */*.ipynb
