@@ -9,7 +9,7 @@ import wandb
 
 from config import *
 from data import ImageDataset
-from model import ResNet
+from model import FinetunedImageClassifier
 from utils import *
 
 def main():
@@ -27,20 +27,25 @@ def main():
     start_task(f"Reading {video_path}")
     video, _, _ = torchvision.io.read_video(video_path, start_pts=start_time, end_pts=start_time+args.duration, pts_unit="sec", output_format="TCHW")
 
-    # load model
+    # load artifact
     start_task(f"Loading {args.model}:{args.version}")
-    filepath = f"artifacts/{args.model}:{args.version}/{args.model}.pt"
     api = wandb.Api()
     artifact = api.artifact(f'mikasenghaas/bsc/{args.model}:{args.version}', type='model') # pyright: ignore
     artifact.download()
 
-    model = ResNet(7)
-    model.load_state_dict(torch.load(filepath))
-    model.eval()
-
     # load data
     images = ImageDataset(PROCESSED_DATA_PATH, split="test")
     id2label = images.id2label
+
+    # load models and transform
+    model_path = f"artifacts/{args.model}:{args.version}/{args.model}.pt"
+    transforms_path = f"artifacts/{args.model}:{args.version}/transforms.pkl"
+
+    transform = load_pickle(transforms_path)
+    model = FinetunedImageClassifier(args.model, pretrained=False, id2label = images.id2label)
+    model.load_state_dict(torch.load(model_path))
+    model.eval()
+
 
     # predict on random video clip
     fig, ax = plt.subplots()
@@ -50,23 +55,9 @@ def main():
 
     img = ax.imshow(transforms.ToPILImage()(video[0])) # type: ignore
 
-    """
-    # transforms
-    frame = resize(video[0], (224, 224)).float() # type: ignore
-    frame = frame / 255.0
-    frame = normalise_image(frame)
-
-    show_image(frame, show=True, unnormalise=True)
-    return
-    """
-
     def animate(i):
         # transforms
-        frame = resize(video[i], (224, 224)).float() # type: ignore
-        frame = frame / 255.0
-        frame = normalise_image(frame)
-
-        logits = model(frame.unsqueeze(0))
+        logits = model(transform(video[i]).unsqueeze(0))
         probs = softmax(logits, 1)
         prob, pred = torch.max(probs, 1)
         prob, pred = prob.item(), pred.item()

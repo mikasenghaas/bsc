@@ -1,8 +1,6 @@
 # train.py
 #  by: mika senghaas
 
-import datetime
-
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -11,10 +9,11 @@ import wandb
 
 from config import *
 from data import ImageDataset
-from model import ResNet
+from transform import ImageTransformer
+from model import FinetunedImageClassifier
 from utils import *
 
-def train(model, train_loader, val_loader, criterion, optim, scheduler, args):
+def train(model, transform, train_loader, val_loader, criterion, optim, scheduler, args):
     model.to(args.device)
     pbar = tqdm(range(args.max_epochs))
     pbar.set_description(f'XXX/XX - Train: X.XXX (XX.X%) - Val: X.XXX (XX.X%)')
@@ -30,7 +29,7 @@ def train(model, train_loader, val_loader, criterion, optim, scheduler, args):
             # zero the parameter gradients
             optim.zero_grad()
   
-            logits = model(inputs)
+            logits = model(transform(inputs))
             preds = torch.argmax(logits, 1)
             loss = criterion(logits, labels)
   
@@ -52,12 +51,10 @@ def train(model, train_loader, val_loader, criterion, optim, scheduler, args):
             # log epoch metrics for train and val split
             if args.log:
                 wandb.log({
-                    'Training Accuracy': train_acc, 
-                    'Validation Accuracy': val_acc,
-                    'Training Loss': train_loss, 
-                    'Validation Loss': val_loss,
-                    'Epoch': epoch,
-                    'Batch': batch_num})
+                    'training_accuracy': train_acc, 
+                    'validation_accuracy': val_acc,
+                    'training_loss': train_loss, 
+                    'validation_loss': val_loss})
                 
         if val_loader != None:
             running_loss, running_correct = 0.0, 0
@@ -66,7 +63,7 @@ def train(model, train_loader, val_loader, criterion, optim, scheduler, args):
                 inputs = inputs.to(args.device)
                 labels = labels.to(args.device)
       
-                logits = model(inputs)
+                logits = model(transform(inputs))
                 preds = torch.argmax(logits, 1)
                 loss = criterion(logits, labels)
 
@@ -92,23 +89,20 @@ def main():
 
     # initialise wandb run
     if args.log:
-        wandb.init(project="bsc", notes="Computer Vision Models for Indoor Localisation", config=vars(args))
+        wandb.init(project="bsc", name=args.model, notes="computer vision models for indoor localisation", config=vars(args))
 
-        wandb.define_metric("Training Loss", summary="min")
-        wandb.define_metric("Validation Loss", summary="min")
-        wandb.define_metric("Training Accuracy", summary="max")
-        wandb.define_metric("Validation Accuracy", summary="max")
+        wandb.define_metric("training_loss", summary="min")
+        wandb.define_metric("validation_loss", summary="min")
+        wandb.define_metric("training_accuracy", summary="max")
+        wandb.define_metric("validation_accuracy", summary="max")
 
     # load data 
     start_task("Initialising Data and Model")
-    match args.model:
-        case 'resnet':
-            data = { split: ImageDataset(filepath=PROCESSED_DATA_PATH, split=split) for split in SPLITS }
-            model = ResNet(data['train'].num_classes)
-        case _:
-            # default case
-            data = { split: ImageDataset(filepath=PROCESSED_DATA_PATH, split=split) for split in SPLITS }
-            model = ResNet(data['train'].num_classes)
+
+    # initialise data, tranforms and model
+    data = { split: ImageDataset(filepath=PROCESSED_DATA_PATH, split=split) for split in SPLITS }
+    transform = ImageTransformer()
+    model = FinetunedImageClassifier(args.model, pretrained=args.pretrained, id2label=data['train'].id2label)
 
     # initialise data loader
     loader = { split: DataLoader(data[split], batch_size=args.batch_size) for split in SPLITS}
@@ -121,29 +115,35 @@ def main():
     # train model
     start_task("Starting Training")
     print(get_summary(vars(args)))
-    trained_model = train(model, loader['train'], loader['val'], criterion, optim, scheduler, args)
+    trained_model = train(model, transform, loader['train'], loader['val'], criterion, optim, scheduler, args)
 
-    # save model
-    if args.save:
+    if args.log:
+        # log meta information
+        wandb.config.update({"num_params": model.meta['num_params']})
+        wandb.summary["dataset"] = data['train'].meta 
+        wandb.summary["model"] = model.meta
+
+        # prepare artifact saving
         filepath = os.path.join(MODEL_PATH, args.model)
         mkdir(filepath)
-        save_path = os.path.join(filepath, f"{args.model}.pt")
-        start_task(f"Saving Model to {save_path}")
-        torch.save(trained_model.state_dict(), save_path)
 
-        # log model to wandb
+        # save transforms
+        start_task(f"Saving Transforms and Model to {filepath}")
+        save_pickle(transform, os.path.join(filepath, f"transforms.pkl"))
+        torch.save(trained_model.state_dict(), os.path.join(filepath, f"{args.model}.pt"))
+
+        # save as artifact to wandb
+        start_task("Saving Artifcats to WANDB")
         artifact = wandb.Artifact(args.model, type="model")
         artifact.add_dir(filepath)
         wandb.log_artifact(artifact)
 
-    # evaluate model
-    if args.evaluate:
         start_task(f"Evaluating Model")
         labels = data['test'].labels
         id2label = data['test'].id2label
-        y_true, y_pred, y_probs = get_predictions(trained_model, loader['test'], device=args.device)
+        y_true, y_pred, y_probs = get_predictions(trained_model, transform, loader['test'], device=args.device)
 
-        wandb.run.summary["Test Accuracy"] = np.mean(y_true == y_pred) # pyright: ignore
+        wandb.run.summary["test_accuracy"] = np.mean(y_true == y_pred) # pyright: ignore
 
         # wandb visualisation
         conf_matrix = wandb.plot.confusion_matrix(None, list(y_true), list(y_pred), labels) # pyright: ignore
@@ -160,10 +160,10 @@ def main():
                     mispredictions.append(wandb.Image(unnormalise_image(image), caption=f"True: {id2label[true]} / Pred: {id2label[pred]}"))
 
         wandb.log({
-            'Confusion Matrix': conf_matrix,
-            'ROC Curve': roc_curve,
-            'Precision-Recall Curve': pr_curve,
-            'Mispredicted Images': mispredictions
+            'confusion_matrix': conf_matrix,
+            'roc_curve': roc_curve,
+            'pr_curve': pr_curve,
+            'mispredictions': mispredictions
         })
 
     end_task("Training Done", start_timer)
