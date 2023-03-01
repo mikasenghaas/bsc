@@ -2,70 +2,63 @@
 #  by: mika senghaas
 
 from torch import nn
-from torchvision import models
+from torchvision.models import (
+        alexnet, AlexNet_Weights,
+        resnet18, ResNet18_Weights,
+        resnet50, ResNet50_Weights,
+        )
+
 
 from config import *
 from utils import *
 
-class ResNet(nn.Module):
-    def __init__(self, num_classes : int):
+MODELS = { 
+          'alexnet': alexnet, 
+          'resnet18': resnet18, 
+          'resnet50': resnet50
+        } 
+
+WEIGHTS = { 
+           'alexnet': AlexNet_Weights.DEFAULT, 
+           'resnet18': ResNet18_Weights.DEFAULT, 
+           'resnet50': ResNet50_Weights.DEFAULT
+        } 
+
+class BaseClassifier(nn.Module):
+    def __init__(self, **kwargs):
         super().__init__()
-        self.resnet = models.resnet18(weights="DEFAULT")
-        self.resnet.fc = nn.Linear(512, num_classes)
+        self.meta = { k: v for k, v in kwargs.items()}
+        if 'id2label' in self.meta:
+            self.meta['num_classes'] = len(self.meta['id2label'])
+            self.meta['label2id'] = { l: i for i, l in self.meta['id2label'].items()}
+
+class FinetunedImageClassifier(BaseClassifier):
+    def __init__(self, model_name : str, pretrained : bool, **kwargs):
+        super().__init__(**kwargs)
+        assert model_name in MODELS, f"Choose model from {MODELS.keys()}"
+
+        # save parms
+        self.model_name = model_name
+        self.pretrained = pretrained
+
+        model = MODELS[model_name]
+        weights = WEIGHTS[model_name]
+
+        # intialise model
+        if self.pretrained: self.model = model(weights=weights)
+        else: self.model = model()
+
+        if self.model_name in ['resnet18', 'resnet50']:
+            self.model.fc = nn.Linear(self.model.fc.in_features, self.meta['num_classes'])
+        elif self.model_name == 'alexnet':
+            self.model.classifier[6] = nn.Linear(self.model.classifier[6].in_features, self.meta['num_classes'])
+
+        # meta information to log
+        self.meta = {
+                'model_name': self.model_name,
+                'pretrained': self.pretrained,
+                'num_params': sum(param.numel() for param in self.model.parameters())
+            }
 
     def forward(self, inputs):
-        return self.resnet(inputs)
-
-MODELS = { 'resnet': ResNet, }
-
-
-"""
-
-class VideoMAE(nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-
-        # loading labels
-        self.labels = load_labels(PROCESSED_DATA_PATH)
-        self.label2id = { l: i for i, l in enumerate(self.labels) }
-        self.id2label = { i: l for i, l in enumerate(self.labels) }
-
-        image_processor = VideoMAEImageProcessor()
-        mean = image_processor.image_mean
-        std = image_processor.image_std
-
-        # processing
-        self.transform=Compose([
-                     Lambda(lambda x: x / 255.0),
-                     Normalize(mean, std)
-                     ])
-
-        self.processor = VideoMAEImageProcessor.from_pretrained(CHECKPOINT,
-                do_resize=False)
-
-        # classifier
-        self.videomae = VideoMAEForVideoClassification.from_pretrained(
-                CHECKPOINT, 
-                label2id=self.label2id, 
-                id2label=self.id2label, 
-                ignore_mismatched_sizes=True)
-
-    def forward(self, x):
-        Forward pass to classify a video sequence to a location label.
-
-        video : ArrayLike[B, T, C, H, W]
-        # process badge of images
-        B,T,C,H,W = x.shape
-        inputs = torch.empty(B, T, C, H, W)
-        for i in range(B):
-            processed = self.processor(list(x[i]), return_tensors="pt")['pixel_values']
-            inputs[i] = processed.squeeze()
-
-        outputs = self.videomae(inputs)
-        logits = outputs.logits
-
-        return logits
-
-    def predict(self, x):
-        pass
-"""
+        return self.model(inputs)
