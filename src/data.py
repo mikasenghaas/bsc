@@ -18,7 +18,7 @@ class ImageDataset(Dataset):
 
         # image paths
         self.image_paths = load_labelled_image_paths(filepath)
-        self.num_samples = len(self.image_paths)
+        self.total_samples = len(self.image_paths)
         random.shuffle(self.image_paths)
 
         # transforms
@@ -30,20 +30,24 @@ class ImageDataset(Dataset):
         self.label2id = { l: i for i, l in enumerate(self.labels) }
         self.id2label = { i: l for i, l in enumerate(self.labels) }
 
+        # meta information to log
+        self.meta = {
+                'Labels': self.labels,
+                'Number of Samples': self.total_samples,
+                'Number of Classes': self.num_classes,
+                'Splits': [TRAIN_RATIO, VAL_RATIO, TEST_RATIO]
+                }
+
     def __getitem__(self, idx): # [x1, ..., x10]
         if self.split == 'val':
-            idx += int(self.num_samples * TRAIN_RATIO)
+            idx += int(self.total_samples * TRAIN_RATIO)
         elif self.split == 'test':
-            idx += int(self.num_samples * TRAIN_RATIO) + int(self.num_samples * VAL_RATIO)
+            idx += int(self.total_samples * TRAIN_RATIO) + int(self.total_samples * VAL_RATIO)
 
         image_path, label = self.image_paths[idx]
 
         # load video to tensor
-        image_tensor = torchvision.io.read_image(image_path).float() # C,H,W
-
-        # preprocess
-        image_tensor = image_tensor / 255.0
-        image_tensor = normalise_image(image_tensor)
+        image_tensor = torchvision.io.read_image(image_path) # C,H,W
 
         # get integer encoding of label
         label_id = self.label2id[label]
@@ -52,11 +56,11 @@ class ImageDataset(Dataset):
 
     def __len__(self):
         if self.split == "train":
-            return int(self.num_samples * TRAIN_RATIO)
+            return int(self.total_samples * TRAIN_RATIO)
         elif self.split == "val":
-            return int(self.num_samples * VAL_RATIO)
+            return int(self.total_samples * VAL_RATIO)
         elif self.split == "test":
-            return int(self.num_samples * TEST_RATIO)
+            return int(self.total_samples * TEST_RATIO)
         else:
             raise Exception
 
