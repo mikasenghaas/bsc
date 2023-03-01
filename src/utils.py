@@ -1,6 +1,7 @@
 # utils.py
 #  by: mika senghaas
 
+import pickle
 import argparse
 import datetime
 import glob
@@ -33,26 +34,22 @@ def load_preprocess_args() -> argparse.Namespace:
 
 def load_train_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
+    # model
     parser.add_argument("-M", "--model", type=str, choices=MODELS.keys(), help="Choose Model to train", required=True)
+    parser.add_argument("--pretrained", action=argparse.BooleanOptionalAction, default=PRETRAINED, help="Finetune pre-trained model")
+
+    # training
     parser.add_argument("--max-epochs", type=int, default=MAX_EPOCHS, help="Maximum Epochs")
     parser.add_argument("--batch-size", type=int, default=BATCH_SIZE, help="Batch Size in Training and Validation Loader")
     parser.add_argument("--lr", type=float, default=LR, help="Learning Rate for Optimiser")
     parser.add_argument("--step-size", type=int, default=STEP_SIZE, help="Step Size for Schedulr")
     parser.add_argument("--gamma", type=float, default=GAMMA, help="Gamma for Scheduler")
-    parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default=DEVICE, help="Training Device")
     parser.add_argument("--log", action=argparse.BooleanOptionalAction, default=LOG, help="Whether to log the run to WANDB")
-    parser.add_argument("--evaluate", action=argparse.BooleanOptionalAction, help="Whether to compute evaluation metrics for trained model")
-    parser.add_argument("--save", action=argparse.BooleanOptionalAction, help="Whether to store the trained model as an artefact")
+
+    # general
+    parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default=DEVICE, help="Training Device")
 
     args = parser.parse_args()
-    if args.evaluate == None and args.log:
-        args.evaluate = True
-    else:
-        args.evaluate = False
-    if args.save == None and args.log:
-        args.save = True
-    else:
-        args.save = False
 
     return args
 
@@ -197,7 +194,15 @@ def load_labeled_video_paths(filepath: str):
   
     return labelled_video_paths
 
-def get_predictions(model, loader, device):
+def save_pickle(obj, filepath: str):
+    with open(filepath, "wb") as f:
+        pickle.dump(obj, f)
+
+def load_pickle(filepath: str):
+    with open(filepath, "rb") as f:
+        return pickle.load(f)
+
+def get_predictions(model, transforms, loader, device):
     # load and predict on test split
     y_true, y_pred, y_probs = None, None, None
     for batch_num, (inputs, labels) in enumerate(loader):
@@ -205,7 +210,7 @@ def get_predictions(model, loader, device):
         labels = labels.to(device)
 
         # predict test samples
-        logits = model(inputs)
+        logits = model(transforms(inputs))
         probs = softmax(logits, 1).detach() # B, 7
         preds = logits.argmax(-1)
 
