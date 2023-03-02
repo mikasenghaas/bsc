@@ -6,6 +6,7 @@ from torchvision.models import (
         alexnet, AlexNet_Weights,
         resnet18, ResNet18_Weights,
         resnet50, ResNet50_Weights,
+        mobilenet_v3_small, MobileNet_V3_Small_Weights
         )
 
 
@@ -13,16 +14,18 @@ from config import *
 from utils import *
 
 MODELS = { 
-          'alexnet': alexnet, 
-          'resnet18': resnet18, 
-          'resnet50': resnet50
-        } 
+      'alexnet': alexnet,
+      'resnet18': resnet18,
+      'resnet50': resnet50,
+      'mobilenet-v3-small': mobilenet_v3_small
+          }
 
 WEIGHTS = { 
-           'alexnet': AlexNet_Weights.DEFAULT, 
-           'resnet18': ResNet18_Weights.DEFAULT, 
-           'resnet50': ResNet50_Weights.DEFAULT
-        } 
+      'alexnet': AlexNet_Weights.DEFAULT,
+      'resnet18': ResNet18_Weights.DEFAULT,
+      'resnet50': ResNet50_Weights.DEFAULT,
+      'mobilenet-v3-small': MobileNet_V3_Small_Weights.DEFAULT
+           }
 
 class BaseClassifier(nn.Module):
     def __init__(self, **kwargs):
