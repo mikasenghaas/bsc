@@ -1,6 +1,7 @@
 # train.py
 #  by: mika senghaas
 
+from timeit import default_timer
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -16,11 +17,13 @@ from utils import *
 def train(model, transform, train_loader, val_loader, criterion, optim, scheduler, args):
     model.to(args.device)
     pbar = tqdm(range(args.max_epochs))
-    pbar.set_description(f'XXX/XX - Train: X.XXX (XX.X%) - Val: X.XXX (XX.X%)')
+    pbar.set_description(f'XXX/XX (XX.Xms/ XX.Xms) - Train: X.XXX (XX.X%) - Val: X.XXX (XX.X%)')
     train_loss, val_loss = 0.0, 0.0
     train_acc, val_acc = 0.0, 0.0
+    training_times, inference_times = [], []
     for epoch in pbar:
         running_loss, running_correct = 0.0, 0
+        running_training_time, running_inference_time = 0.0, 0.0
         model.train()
         for batch_num, (inputs, labels) in enumerate(train_loader):
             inputs = inputs.to(args.device)
@@ -29,13 +32,22 @@ def train(model, transform, train_loader, val_loader, criterion, optim, schedule
             # zero the parameter gradients
             optim.zero_grad()
   
+            # forward pass
+            start = default_timer()
             logits = model(transform(inputs))
+            running_inference_time += default_timer() - start
+
+            # compute predictions
             preds = torch.argmax(logits, 1)
+
+            # compute loss
             loss = criterion(logits, labels)
   
-            # backward + optimize only if in training phase
+            # backprop error
             loss.backward()
             optim.step()
+
+            running_training_time += default_timer() - start
 
             # performance metrics
             running_loss += loss.item()
@@ -46,7 +58,7 @@ def train(model, transform, train_loader, val_loader, criterion, optim, schedule
             train_acc = running_correct / samples_seen
             train_loss = running_loss / samples_seen
             
-            pbar.set_description(f'{str(epoch).zfill(len(str(args.max_epochs)))}/{str(batch_num).zfill(len(str(len(train_loader))))} - Train: {train_loss:.3f} ({(train_acc * 100):.1f}%) - Val: {val_loss:.3f} ({(val_acc * 100):.1f}%)')
+            pbar.set_description(f'{str(epoch).zfill(len(str(args.max_epochs)))}/{str(batch_num).zfill(len(str(len(train_loader))))} ({round(running_training_time / samples_seen * 1000, 1)}ms | {round(running_inference_time / samples_seen * 1000, 1)}ms) - Train: {train_loss:.3f} ({(train_acc * 100):.1f}%) - Val: {val_loss:.3f} ({(val_acc * 100):.1f}%)')
 
             # log epoch metrics for train and val split
             if args.log:
@@ -55,6 +67,10 @@ def train(model, transform, train_loader, val_loader, criterion, optim, schedule
                     'validation_accuracy': val_acc,
                     'training_loss': train_loss, 
                     'validation_loss': val_loss})
+
+        
+        training_times.append(running_training_time)
+        inference_times.append(running_inference_time)
                 
         if val_loader != None:
             running_loss, running_correct = 0.0, 0
@@ -78,6 +94,13 @@ def train(model, transform, train_loader, val_loader, criterion, optim, schedule
 
         # adjust learning rate
         scheduler.step()
+
+    # log average training step time/ sample + inference time/ sample
+    if args.log:
+        wandb.config.update({
+            "training_time_per_sample_ms" : round(sum(training_times) / len(training_times), 1),
+            "inference_time_per_sample_ms" : round(sum(inference_times) / len(inference_times), 1)
+            })
 
     return model
 
