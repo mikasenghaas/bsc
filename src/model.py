@@ -3,12 +3,15 @@
 
 from torch import nn
 from torchvision.models import (
-        alexnet, AlexNet_Weights,
-        resnet18, ResNet18_Weights,
-        resnet50, ResNet50_Weights,
-        mobilenet_v3_small, MobileNet_V3_Small_Weights
-        )
-
+    AlexNet_Weights,
+    MobileNet_V3_Small_Weights,
+    ResNet18_Weights,
+    ResNet50_Weights,
+    alexnet,
+    mobilenet_v3_small,
+    resnet18,
+    resnet50,
+)
 
 from config import *
 from utils import *
@@ -27,41 +30,45 @@ WEIGHTS = {
       'mobilenet-v3-small': MobileNet_V3_Small_Weights.DEFAULT
            }
 
-class BaseClassifier(nn.Module):
+class FinetunedImageClassifier(nn.Module):
+    MANDATORY = ['model_name', 'num_classes'] 
+
+    @staticmethod
+    def default_config():
+        model_name = "resnet18"
+        pretrained = PRETRAINED
+        num_classes = len(CLASSES)
+
+        return {"model_name": model_name,
+                "pretrained": pretrained,
+                "num_classes": num_classes}
+
     def __init__(self, **kwargs):
         super().__init__()
-        self.meta = { k: v for k, v in kwargs.items()}
-        if 'id2label' in self.meta:
-            self.meta['num_classes'] = len(self.meta['id2label'])
-            self.meta['label2id'] = { l: i for i, l in self.meta['id2label'].items()}
+        # pre conditions
+        assert len(kwargs.keys()) > 0 and all(x in kwargs.keys() for x in FinetunedImageClassifier.MANDATORY), f"Class requires the following parameters: {FinetunedImageClassifier.MANDATORY}"
+        assert kwargs['model_name'] in MODELS, f"Choose model from {MODELS.keys()}"
 
-class FinetunedImageClassifier(BaseClassifier):
-    def __init__(self, model_name : str, pretrained : bool, **kwargs):
-        super().__init__(**kwargs)
-        assert model_name in MODELS, f"Choose model from {MODELS.keys()}"
+        # parse kwargs
+        self.model_name = kwargs["model_name"]
+        self.num_classes = kwargs["num_classes"]
 
-        # save parms
-        self.model_name = model_name
-        self.pretrained = pretrained
-
-        model = MODELS[model_name]
-        weights = WEIGHTS[model_name]
-
-        # intialise model
-        if self.pretrained: self.model = model(weights=weights)
-        else: self.model = model()
+        # initialise model
+        if kwargs.get("pretrained"): 
+            self.model = MODELS[self.model_name](weights=WEIGHTS[self.model_name])
+        else: 
+            self.model = MODELS[self.model_name]()
 
         if self.model_name in ['resnet18', 'resnet50']:
-            self.model.fc = nn.Linear(self.model.fc.in_features, self.meta['num_classes'])
+            self.model.fc = nn.Linear(self.model.fc.in_features, self.num_classes)
         elif self.model_name == 'alexnet':
-            self.model.classifier[6] = nn.Linear(self.model.classifier[6].in_features, self.meta['num_classes'])
+            self.model.classifier[6] = nn.Linear(self.model.classifier[6].in_features, self.num_classes)
 
-        # meta information to log
-        self.meta = {
-                'model_name': self.model_name,
-                'pretrained': self.pretrained,
+        # meta information
+        self.meta = kwargs
+        self.meta.update({
                 'num_params': sum(param.numel() for param in self.model.parameters())
-            }
+                })
 
     def forward(self, inputs):
         return self.model(inputs)
