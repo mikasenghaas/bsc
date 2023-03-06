@@ -177,8 +177,8 @@ def show_images(image_tensors : torch.Tensor, titles : list[str] | None= None, u
 
     n = len(image_tensors)
     dim = int(math.sqrt(n))
-    fig, ax = plt.subplots(figsize=(8,8), ncols=dim, nrows=dim) # pyright: ignore
-    if not titles:
+    fig, ax = plt.subplots(figsize=(16,16), ncols=dim, nrows=dim) # pyright: ignore
+    if titles == None:
         titles = ["Unnamed Video Frame"] * n
     for i in range(dim):
         for j in range(dim):
