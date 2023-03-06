@@ -1,3 +1,18 @@
 #!/bin/bash
 
-python src/train.py
+# experiment 1: maximum data/ same training/ different models
+python src/train.py -M alexnet --all-classes --wandb-group experiment1 --wandb-name alexnet --wandb-log
+python src/train.py -M resnet18 --all-classes --wandb-group experiment1 --wandb-name resnet18 --wandb-log
+python src/train.py -M resnet50 --all-classes --wandb-group experiment1 --wandb-name resnet50 --wandb-log
+python src/train.py -M mobilenet-v3-small --all-classes --wandb-group experiment1 --wandb-name mobilenet-v3-small --device cpu --wandb-log
+
+# experiment 2: baseline model/ different number of classes
+python src/train.py -M resnet18 --ground-floor --wandb-group experiment2 --wandb-name resnet18-ground-floor --wandb-log
+python src/train.py -M resnet18 --first-floor --wandb-group experiment2 --wandb-name resnet18-first-floor --wandb-log
+python src/train.py -M resnet18 --all-classes --wandb-group experiment2 --wandb-name resnet18-all --wandb-log
+
+# experiment 3: baseline model/ different number of samples
+python src/train.py -M resnet18 --all-classes --ratio 0.25 --wandb-group experiment3 --wandb-name resnet18-25 --wandb-log
+python src/train.py -M resnet18 --all-classes --ratio 0.50 --wandb-group experiment3 --wandb-name resnet18-50 --wandb-log
+python src/train.py -M resnet18 --all-classes --ratio 0.75 --wandb-group experiment3 --wandb-name resnet18-75 --wandb-log
+python src/train.py -M resnet18 --all-classes --ratio 1.00 --wandb-group experiment3 --wandb-name resnet18-100 --wandb-log
