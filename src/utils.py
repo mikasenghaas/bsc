@@ -15,7 +15,6 @@ from matplotlib import pyplot as plt
 from matplotlib import animation
 import numpy as np
 import pandas as pd
-from sklearn.metrics import classification_report, confusion_matrix
 from termcolor import colored
 import torch
 from torch.nn.functional import softmax
@@ -27,9 +26,15 @@ from utils import *
 def add_general_args(group):
     group.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default=DEVICE, help="Training Device")
 
+def add_wandb_args(group):
+    group.add_argument("--wandb-log", action=argparse.BooleanOptionalAction, default=LOG, help="Log to WANDB")
+    group.add_argument("--wandb-name", type=str, default="", help="Experiment Group (WANDB)")
+    group.add_argument("--wandb-group", type=str, default="", help="Experiment Group (WANDB)")
+    group.add_argument("--wandb-tags", nargs="+", default=[], help="Experiment Tags (WANDB)")
+
 def add_data_args(group):
     group.add_argument("--filepath", type=str, default=len(load_labels(PROCESSED_DATA_PATH)), help=f"List of classes to include in training")
-    group.add_argument("--include-classes", default=[], help=f"List of classes to include in training") # TODO
+    group.add_argument("--include-classes", nargs="+", default=[], help=f"List of classes to include in training") # TODO
     group.add_argument("--all-classes", action=argparse.BooleanOptionalAction, default=False, help="Adds all classes in category 'Ground Floor' to training")
     group.add_argument("--ground-floor", action=argparse.BooleanOptionalAction, default=False, help="Adds all classes in category 'Ground Floor' to training")
     group.add_argument("--first-floor", action=argparse.BooleanOptionalAction, default=False, help="Adds all classes in category 'First Floor' to training")
@@ -52,21 +57,23 @@ def load_train_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
 
     # data and model args
+    general_group = parser.add_argument_group(title="General Arguments")
     model_group = parser.add_argument_group(title="Model Arguments")
     data_group = parser.add_argument_group(title="Data Arguments")
-    general_group = parser.add_argument_group(title="General Arguments")
+    wandb_group = parser.add_argument_group(title="W&B Arguments")
 
     add_model_args(model_group)
     add_data_args(data_group)
     add_general_args(general_group)
+    add_wandb_args(wandb_group)
 
     # args only for training
-    parser.add_argument("--max-epochs", type=int, default=MAX_EPOCHS, help="Maximum Epochs")
-    parser.add_argument("--batch-size", type=int, default=BATCH_SIZE, help="Batch Size in Training and Validation Loader")
-    parser.add_argument("--lr", type=float, default=LR, help="Learning Rate for Optimiser")
-    parser.add_argument("--step-size", type=int, default=STEP_SIZE, help="Step Size for Schedulr")
-    parser.add_argument("--gamma", type=float, default=GAMMA, help="Gamma for Scheduler")
-    parser.add_argument("--log", action=argparse.BooleanOptionalAction, default=LOG, help="Whether to log the run to WANDB")
+    train_group = parser.add_argument_group(title="Training Arguments")
+    train_group.add_argument("--max-epochs", type=int, default=MAX_EPOCHS, help="Maximum Epochs")
+    train_group.add_argument("--batch-size", type=int, default=BATCH_SIZE, help="Batch Size in Training and Validation Loader")
+    train_group.add_argument("--lr", type=float, default=LR, help="Learning Rate for Optimiser")
+    train_group.add_argument("--step-size", type=int, default=STEP_SIZE, help="Step Size for Scheduler")
+    train_group.add_argument("--gamma", type=float, default=GAMMA, help="Gamma for Scheduler")
 
     # parse args
     args = parser.parse_args()
@@ -82,6 +89,11 @@ def load_train_args() -> argparse.Namespace:
         if args.first_floor:
             include_classes |= set(FIRST_FLOOR)
     args.include_classes = sorted(include_classes)
+
+    if not args.wandb_log:
+        args.wandb_name = False
+        args.wandb_group = False
+        args.wandb_tags = []
 
     return args
 
@@ -245,7 +257,7 @@ def load_pickle(filepath: str):
 
 def save_json(obj, filepath: str):
     with open(filepath, "w") as f:
-        json.dump(obj, f)
+        json.dump(obj, f, indent=4, sort_keys=True)
 
 def load_json(filepath: str):
     with open(filepath, "r") as f:
