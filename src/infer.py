@@ -4,7 +4,6 @@ import glob
 from torch.nn.functional import softmax
 import torchvision
 from torchvision import transforms
-from torchvision.transforms.functional import resize
 import wandb
 
 from config import *
@@ -34,18 +33,25 @@ def main():
     artifact.download()
 
     # load data
-    images = ImageDataset(PROCESSED_DATA_PATH, split="test")
-    id2label = images.id2label
+    config = ImageDataset.default_config()
+    images = ImageDataset(**config)
+    id2class = images.id2class
 
-    # load models and transform
+    # paths to model, transforms and config file
     model_path = f"artifacts/{args.model}:{args.version}/{args.model}.pt"
+    config_path = f"artifacts/{args.model}:{args.version}/config.json"
     transforms_path = f"artifacts/{args.model}:{args.version}/transforms.pkl"
 
+    # load transforms
     transform = load_pickle(transforms_path)
-    model = FinetunedImageClassifier(args.model, pretrained=False, id2label = images.id2label)
-    model.load_state_dict(torch.load(model_path))
-    model.eval()
 
+    # load model
+    config = load_json(config_path)
+    model = FinetunedImageClassifier(**config)
+    model.load_state_dict(torch.load(model_path))
+
+    # set eval mode
+    model.eval()
 
     # predict on random video clip
     fig, ax = plt.subplots()
@@ -62,7 +68,7 @@ def main():
         prob, pred = torch.max(probs, 1)
         prob, pred = prob.item(), pred.item()
 
-        print(f"Prediction: {id2label[pred]} (Confidence: {round(prob * 100, 2)}%)", end="\r")
+        print(f"Prediction: {id2class[pred]} (Confidence: {round(prob * 100, 2)}%)", end="\r")
 
         img.set_array(transforms.ToPILImage()(video[i])) # type: ignore
 
@@ -70,14 +76,6 @@ def main():
 
     a = animation.FuncAnimation(fig, animate, frames=len(video), interval=1, blit=True)
     plt.show()
-    return
-
-    for frame in video:
-        print(frame.shape)
-        break
-
-        title = f"Pred: {id2label[pred]} ({round(prob * 100, 1)}%), True: {id2label[label]}"
-        show_image(image, title=title, unnormalise=True, show=True)
 
 if __name__ == "__main__":
     main()
