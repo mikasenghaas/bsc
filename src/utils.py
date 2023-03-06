@@ -1,32 +1,48 @@
 # utils.py
 #  by: mika senghaas
 
-import pickle
 import argparse
 import datetime
 import glob
 import math
 import os
+import pickle
+import json
 import timeit
 
 import ffmpeg
-import numpy as np
-import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib import animation
+import numpy as np
+import pandas as pd
+from sklearn.metrics import classification_report, confusion_matrix
 from termcolor import colored
 import torch
 from torch.nn.functional import softmax
 from torchvision import transforms
-from sklearn.metrics import classification_report, confusion_matrix
 
 from config import *
-from model import MODELS
 from utils import *
+
+def add_general_args(group):
+    group.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default=DEVICE, help="Training Device")
+
+def add_data_args(group):
+    group.add_argument("--filepath", type=str, default=len(load_labels(PROCESSED_DATA_PATH)), help=f"List of classes to include in training")
+    group.add_argument("--include-classes", default=[], help=f"List of classes to include in training") # TODO
+    group.add_argument("--all-classes", action=argparse.BooleanOptionalAction, default=False, help="Adds all classes in category 'Ground Floor' to training")
+    group.add_argument("--ground-floor", action=argparse.BooleanOptionalAction, default=False, help="Adds all classes in category 'Ground Floor' to training")
+    group.add_argument("--first-floor", action=argparse.BooleanOptionalAction, default=False, help="Adds all classes in category 'First Floor' to training")
+    group.add_argument("--ratio", type=float, default=RATIO, help="Randomly sample a ratio of samples in every class")
+
+def add_model_args(group):
+    group.add_argument("-M", "--model", type=str, help="Model Identifier", required=True)
+    group.add_argument("-V", "--version", type=str, default="latest", help="Model Version. Either 'latest' or 'vX'")
+    group.add_argument("--pretrained", action=argparse.BooleanOptionalAction, default=PRETRAINED, help="Finetune pre-trained model")
 
 def load_preprocess_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--max-LENGTH", type=int, default=MAX_LENGTH, help="Maximum number of frames to sample in single clip")
+    parser.add_argument("--max-length", type=int, default=MAX_LENGTH, help="Maximum number of frames to sample in single clip")
     parser.add_argument("--fps", type=int, default=FPS, help="Frame rate to sample from")
 
     args = parser.parse_args()
@@ -34,11 +50,17 @@ def load_preprocess_args() -> argparse.Namespace:
 
 def load_train_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    # model
-    parser.add_argument("-M", "--model", type=str, choices=MODELS.keys(), help="Choose Model to train", required=True)
-    parser.add_argument("--pretrained", action=argparse.BooleanOptionalAction, default=PRETRAINED, help="Finetune pre-trained model")
 
-    # training
+    # data and model args
+    model_group = parser.add_argument_group(title="Model Arguments")
+    data_group = parser.add_argument_group(title="Data Arguments")
+    general_group = parser.add_argument_group(title="General Arguments")
+
+    add_model_args(model_group)
+    add_data_args(data_group)
+    add_general_args(general_group)
+
+    # args only for training
     parser.add_argument("--max-epochs", type=int, default=MAX_EPOCHS, help="Maximum Epochs")
     parser.add_argument("--batch-size", type=int, default=BATCH_SIZE, help="Batch Size in Training and Validation Loader")
     parser.add_argument("--lr", type=float, default=LR, help="Learning Rate for Optimiser")
@@ -46,20 +68,37 @@ def load_train_args() -> argparse.Namespace:
     parser.add_argument("--gamma", type=float, default=GAMMA, help="Gamma for Scheduler")
     parser.add_argument("--log", action=argparse.BooleanOptionalAction, default=LOG, help="Whether to log the run to WANDB")
 
-    # general
-    parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default=DEVICE, help="Training Device")
-
+    # parse args
     args = parser.parse_args()
+
+    include_classes = set(args.include_classes)
+    if args.all_classes:
+        include_classes |= set(CLASSES)
+        args.ground_floor = True
+        args.first_floor = True
+    else:
+        if args.ground_floor:
+            include_classes |= set(GROUND_FLOOR)
+        if args.first_floor:
+            include_classes |= set(FIRST_FLOOR)
+    args.include_classes = sorted(include_classes)
 
     return args
 
 def load_infer_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("-M", "--model", type=str, choices=MODELS.keys(), help="Choose model to evaluate", required=True)
-    parser.add_argument("-V", "--version", type=str, default="latest", help="Version of the model. Is either 'latest' or 'vX'")
-    parser.add_argument("--duration", type=int, default=DURATION, help="Length of video clip to evaluate")
-    parser.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default=DEVICE, help="Training Device")
 
+    # model and general args
+    model_group = parser.add_argument_group(title="Model Arguments")
+    general_group = parser.add_argument_group(title="Data Arguments")
+
+    add_model_args(model_group)
+    add_general_args(general_group)
+
+    # args only for inference
+    parser.add_argument("--duration", type=int, default=DURATION, help="Length of video clip")
+
+    # parse args
     args = parser.parse_args()
 
     return args
@@ -101,7 +140,7 @@ def normalise_image(image_tensor : torch.Tensor) -> torch.Tensor:
 def unnormalise_image(image_tensor : torch.Tensor) -> torch.Tensor:
     return (image_tensor * STD[:, None, None] + MEAN[:, None, None])
 
-def get_summary(args):
+def get_summary(args: dict):
     return pd.Series(args)
 
 def show_image(image_tensor : torch.Tensor, title : str | None= None, unnormalise : bool = False, ax : plt.Axes = None, show : bool = False):
@@ -177,11 +216,13 @@ def load_labels(filepath: str) -> list[str]:
     return sorted(os.listdir(filepath))
 
 def load_labelled_image_paths(filepath: str):
-    labelled_image_paths = []
+    labelled_image_paths = {}
 
     for label_paths in glob.glob(os.path.join(filepath, "*")):
+        label = label_paths.split('/')[-1]
+        labelled_image_paths[label] = []
         for path in glob.glob(os.path.join(label_paths, "**/**")):
-            labelled_image_paths.append((path, label_paths.split('/')[-1]))
+            labelled_image_paths[label].append((path, label))
 
     return labelled_image_paths
 
@@ -201,6 +242,14 @@ def save_pickle(obj, filepath: str):
 def load_pickle(filepath: str):
     with open(filepath, "rb") as f:
         return pickle.load(f)
+
+def save_json(obj, filepath: str):
+    with open(filepath, "w") as f:
+        json.dump(obj, f)
+
+def load_json(filepath: str):
+    with open(filepath, "r") as f:
+        return json.load(f)
 
 def get_predictions(model, transforms, loader, device):
     # load and predict on test split
@@ -224,18 +273,3 @@ def get_predictions(model, transforms, loader, device):
             y_probs = np.concatenate((y_probs, probs.cpu()))
 
     return y_true, y_pred, y_probs
-
-def evaluate_model(model, test_loader, device):
-    id2label = test_loader.dataset.id2label
-
-    y_true, y_pred, _ = get_predictions(model, test_loader, device=device)
-
-    # compute classification report
-    report = classification_report(y_true, y_pred, target_names=id2label.values(), output_dict=True)
-    report = pd.DataFrame(report).transpose().round(2)
-
-    # compute confusion matrix
-    conf_matrix = confusion_matrix(y_true, y_pred)
-    conf_matrix = pd.DataFrame(conf_matrix, index=id2label.values(), columns=id2label.values())
-
-    return { "report": report, "conf_matrix": conf_matrix }
