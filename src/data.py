@@ -9,7 +9,6 @@ from torch.utils.data import Dataset
 from config import *
 from utils import *
 
-# random.seed(SEED)
 
 # load data
 class ImageDataset(Dataset):
@@ -30,6 +29,7 @@ class ImageDataset(Dataset):
     include_classes : list[str] = List of classes to include 
     ratio : float = Randomly sample ratio samples within each class
     """
+
     @staticmethod
     def default_config():
         """
@@ -74,14 +74,25 @@ class ImageDataset(Dataset):
 
         # convert to shuffled flattened list of paths
         image_paths = [image_paths for image_paths in self.images_by_class.values()]
-        self.image_paths = [item for sublist in image_paths for item in sublist] # flatten
-        random.shuffle(self.image_paths)
+        image_paths = [item for sublist in image_paths for item in sublist] # flatten
+        random.Random(SEED).shuffle(image_paths)
+
+        # subset image paths
+        self.num_samples = len(image_paths)
+        self.num_train_samples = int(self.num_samples * TRAIN_RATIO)
+        self.num_val_samples = int(self.num_samples * VAL_RATIO)
+
+        if self.split == "train":
+            self.image_paths = image_paths[:self.num_train_samples]
+        elif self.split == "val":
+            self.image_paths = image_paths[self.num_train_samples: self.num_train_samples+self.num_val_samples]
+        elif self.split == "test":
+            self.image_paths = image_paths[self.num_train_samples+self.num_val_samples:]
 
         # meta
         self.class_distribution = { k: len(v) for k, v in self.images_by_class.items()}
         self.classes = list(self.class_distribution.keys())
         self.num_classes = len(self.classes)
-        self.num_samples = len(self.image_paths)
         self.class2id = { l: i for i, l in enumerate(self.classes) }
         self.id2class = { i: l for i, l in enumerate(self.classes) }
 
@@ -89,16 +100,11 @@ class ImageDataset(Dataset):
         self.meta = kwargs
         self.meta.update({
                 'class_distribution': self.class_distribution,
-                'number_of_samples': self.num_samples,
-                'number_of_classes': self.num_classes,
+                'num_samples': self.num_samples,
+                'num_classes': self.num_classes,
                 })
 
     def __getitem__(self, idx): # [x1, ..., x10]
-        if self.split == 'val':
-            idx += int(self.num_samples * TRAIN_RATIO)
-        elif self.split == 'test':
-            idx += int(self.num_samples * TRAIN_RATIO) + int(self.num_samples * VAL_RATIO)
-
         image_path, label = self.image_paths[idx]
 
         # load video to tensor
@@ -111,11 +117,11 @@ class ImageDataset(Dataset):
 
     def __len__(self):
         if self.split == "train":
-            return int(self.num_samples * TRAIN_RATIO)
+            return self.num_train_samples
         elif self.split == "val":
-            return int(self.num_samples * VAL_RATIO)
+            return self.num_val_samples
         elif self.split == "test":
-            return int(self.num_samples * TEST_RATIO)
+            return self.num_samples - (self.num_train_samples + self.num_val_samples)
         else:
             raise Exception
 
