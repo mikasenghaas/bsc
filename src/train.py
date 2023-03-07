@@ -2,6 +2,7 @@
 #  by: mika senghaas
 
 from timeit import default_timer
+
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -10,8 +11,8 @@ import wandb
 
 from config import *
 from data import ImageDataset
-from transform import ImageTransformer
 from model import FinetunedImageClassifier
+from transform import ImageTransformer
 from utils import *
 
 def train(model, transform, train_loader, val_loader, criterion, optim, scheduler, args):
@@ -158,10 +159,9 @@ def main():
     if args.wandb_log:
         # log meta information
         wandb.config.update({"num_params": model.meta['num_params']})
-        print(data['train'].meta)
-        print(model.meta)
         wandb.summary["dataset"] = data['train'].meta 
-        # wandb.summary["model"] = model.meta
+        model.meta.pop('id2class') # cant log dict with int keys to wandb
+        wandb.summary["model"] = model.meta
 
         # prepare artifact saving
         filepath = os.path.join(MODEL_PATH, args.model)
