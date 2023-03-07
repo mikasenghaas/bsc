@@ -1,10 +1,9 @@
 # Custom
 **/data
-**/artifacts
 **/models
 */test.py
-*/*.ipynb
 wandb
+artifacts
 .DS_Store
 
 # Byte-compiled / optimized / DLL files
