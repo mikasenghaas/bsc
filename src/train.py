@@ -129,7 +129,7 @@ def main():
     start_task("Initialising Data and Model")
 
     # initialise data
-    data = { split: ImageDataset(split="train", include_classes=args.include_classes, ratio=args.ratio) for split in SPLITS } 
+    data = { split: ImageDataset(split=split, include_classes=args.include_classes, ratio=args.ratio) for split in SPLITS } 
     id2class, class2id = data["train"].id2class, data["train"].class2id
 
     # initialise transforms
