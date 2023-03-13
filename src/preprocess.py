@@ -21,23 +21,25 @@ def main():
 
     Efficiency: ~7s for extrating 1 labelled 10s clip
     """
-    start_timer = start_task("Processing Raw Videos", get_timer=True)
-
     # load args
     args = load_preprocess_args()
 
+    # start task
+    start_timer = start_task("Processing Raw Videos", get_timer=True)
+
     # read all directories in raw data folder
-    directories = sorted([d for d in os.listdir(RAW_DATA_PATH) if not d.startswith('.')])
+    filepath = os.path.join(RAW_DATA_PATH, args.split)
+    directories = sorted([d for d in os.listdir(filepath) if not d.startswith('.')])
 
     # iterate over all videos
     pbar = tqdm(directories)
     for date in pbar:
-        directory = os.path.join(RAW_DATA_PATH, date)
+        directory = os.path.join(filepath, date)
         video_path = os.path.join(directory, "video.mov")
         annotation_path = os.path.join(directory, "annotations")
 
         # set progress bar
-        pbar.set_description(f"Extracting {video_path}")
+        pbar.set_description(f"Extracting data/{args.split}/{date}")
 
         # load metadata
         meta : dict = load_metadata(video_path)
@@ -55,7 +57,7 @@ def main():
         next_label = 1 # idx of seconds array of next label
         while start_time < duration:
             # pbar.set_description(f"Extracting {directory}/video.mov ({clip_num+1}/{total_clips})")
-            end_time = min(duration, start_time + MAX_LENGTH)
+            end_time = min(duration, start_time + args.max_length)
             if next_label < len(seconds):
                 end_time = min(end_time, seconds[next_label])
                 if end_time == seconds[next_label]:
@@ -63,7 +65,7 @@ def main():
 
             # extract label depending on clip time
             label = get_label(start_time, annotations)
-            destination_dir = os.path.join(PROCESSED_DATA_PATH, label, f"{date}_{str(clip_num).zfill(2)}")
+            destination_dir = os.path.join(PROCESSED_DATA_PATH, args.split, label, f"{date}_{str(clip_num).zfill(2)}")
             mkdir(destination_dir)
 
             # run ffmpeg

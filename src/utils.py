@@ -47,8 +47,11 @@ def add_model_args(group):
 
 def load_preprocess_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--max-length", type=int, default=MAX_LENGTH, help="Maximum number of frames to sample in single clip")
-    parser.add_argument("--fps", type=int, default=FPS, help="Frame rate to sample from")
+
+    # preprocess args
+    parser.add_argument("--split", choices=["train", "test"], default="train", help="Which split to extract clips from")
+    parser.add_argument("--max-length", type=int, default=MAX_LENGTH, help="Maximum number of frames per extracted clip")
+    parser.add_argument("--fps", type=int, default=FPS, help="Number of frames per second (FPS) to extract")
 
     args = parser.parse_args()
     return args
@@ -107,11 +110,16 @@ def load_infer_args() -> argparse.Namespace:
     add_model_args(model_group)
     add_general_args(general_group)
 
-    # args only for inference
-    parser.add_argument("--duration", type=int, default=DURATION, help="Length of video clip")
+    # infer args
+    infer_group = parser.add_argument_group(title="Inference Arguments")
+    infer_group.add_argument("--split", choices=SPLITS, default="test", help="From where to get the clip from")
+    infer_group.add_argument("--clip", type=str, default=None, help="Which clip to sample")
 
     # parse args
     args = parser.parse_args()
+
+    if args.clip != None:
+        assert args.clip in os.listdir(os.path.join(RAW_DATA_PATH, args.split)), f"{args.clip} must be in {os.path.join(RAW_DATA_PATH, args.split)}"
 
     return args
 
@@ -263,12 +271,13 @@ def load_json(filepath: str):
     with open(filepath, "r") as f:
         return json.load(f)
 
-def get_predictions(model, transforms, loader, device):
+def get_predictions(model, transforms, loader):
     # load and predict on test split
+    model.to(DEVICE)
     y_true, y_pred, y_probs = None, None, None
     for batch_num, (inputs, labels) in enumerate(loader):
-        inputs = inputs.to(device)
-        labels = labels.to(device)
+        inputs = inputs.to(DEVICE)
+        labels = labels.to(DEVICE)
 
         # predict test samples
         logits = model(transforms(inputs))

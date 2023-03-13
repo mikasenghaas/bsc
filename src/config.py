@@ -29,9 +29,8 @@ WIDTH       : int                   = 224
 SPLITS      : list[str]             = ["train", "val", "test"]
 SPLIT       : str                   = "test"
 RATIO       : float                 = 1.0
-TRAIN_RATIO : float                 = 0.7
-VAL_RATIO   : float                 = 0.1
-TEST_RATIO  : float                 = 0.2
+TRAIN_RATIO : float                 = 0.8
+VAL_RATIO   : float                 = 0.2
 
 # TRANSFORMS
 MEAN        : torch.Tensor          = torch.tensor([0.485, 0.456, 0.406])

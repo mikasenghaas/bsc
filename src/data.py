@@ -60,11 +60,13 @@ class ImageDataset(Dataset):
         assert self.ratio > 0.0 and self.ratio <= 1.0, "Ratio needs to be in ]0,1]"
 
         # get all image paths by class
-        self.images_by_class : dict[str, list[str]] = load_labelled_image_paths(PROCESSED_DATA_PATH)
+        if self.split == "test":
+            self.images_by_class : dict[str, list[str]] = load_labelled_image_paths(os.path.join(PROCESSED_DATA_PATH, "test"))
+        else:
+            self.images_by_class : dict[str, list[str]] = load_labelled_image_paths(os.path.join(PROCESSED_DATA_PATH, "train"))
 
         # subset to only include specified classes
         self.images_by_class = {k: self.images_by_class[k] for k in self.include_classes if k in self.images_by_class}
-        assert len(self.images_by_class) == len(self.include_classes)
 
         # randomly sample num_classes
         if self.ratio != 1.0:
@@ -78,16 +80,15 @@ class ImageDataset(Dataset):
         random.Random(SEED).shuffle(image_paths)
 
         # subset image paths
-        self.num_samples = len(image_paths)
-        self.num_train_samples = int(self.num_samples * TRAIN_RATIO)
-        self.num_val_samples = int(self.num_samples * VAL_RATIO)
-
-        if self.split == "train":
-            self.image_paths = image_paths[:self.num_train_samples]
+        if self.split == "test":
+            self.num_samples = len(image_paths)
+            self.image_paths = image_paths
+        elif self.split == "train":
+            self.num_samples = int(len(image_paths) * TRAIN_RATIO)
+            self.image_paths = image_paths[:self.num_samples]
         elif self.split == "val":
-            self.image_paths = image_paths[self.num_train_samples: self.num_train_samples+self.num_val_samples]
-        elif self.split == "test":
-            self.image_paths = image_paths[self.num_train_samples+self.num_val_samples:]
+            self.num_samples = int(len(image_paths) * VAL_RATIO)
+            self.image_paths = image_paths[-self.num_samples:]
 
         # meta
         self.class_distribution = { k: len(v) for k, v in self.images_by_class.items()}
@@ -116,14 +117,7 @@ class ImageDataset(Dataset):
         return image_tensor, class_id
 
     def __len__(self):
-        if self.split == "train":
-            return self.num_train_samples
-        elif self.split == "val":
-            return self.num_val_samples
-        elif self.split == "test":
-            return self.num_samples - (self.num_train_samples + self.num_val_samples)
-        else:
-            raise Exception
+        return self.num_samples
 
 class VideoDataset(Dataset):
     def __init__(self, filepath: str, split : str = "train"):
