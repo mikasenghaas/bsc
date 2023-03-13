@@ -6,6 +6,7 @@ from timeit import default_timer
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+from torch.utils.mobile_optimizer import optimize_for_mobile
 from tqdm import tqdm
 import wandb
 
@@ -69,7 +70,6 @@ def train(model, transform, train_loader, val_loader, criterion, optim, schedule
                     'training_loss': train_loss, 
                     'validation_loss': val_loss})
 
-        
         training_times.append(running_training_time)
         inference_times.append(running_inference_time)
                 
@@ -156,6 +156,10 @@ def main():
     print(get_summary(vars(args)))
     trained_model = train(model, transform, loader['train'], loader['val'], criterion, optim, scheduler, args)
 
+    # prepare trained model for saving
+    trained_model.to('cpu')
+    trained_model.eval()
+
     if args.wandb_log:
         # log meta information
         wandb.config.update({"num_params": model.meta['num_params']})
@@ -167,11 +171,18 @@ def main():
         filepath = os.path.join(MODEL_PATH, args.model)
         mkdir(filepath)
 
+        # optimised model
+        start_task(f"Optimising Model for Mobile")
+        torchscript_model = torch.jit.script(trained_model) # type: ignore
+        optimised_torchscript_model = optimize_for_mobile(torchscript_model) # type: ignore
+
         # save transforms and model
-        start_task(f"Saving Transforms and Model to {filepath}")
+        start_task(f"Saving Artifacts to {filepath}")
         save_pickle(transform, os.path.join(filepath, f"transforms.pkl"))
         save_json(trained_model.meta, os.path.join(filepath, f"config.json"))
         torch.save(trained_model.state_dict(), os.path.join(filepath, f"{args.model}.pt"))
+        optimised_torchscript_model.save(os.path.join(filepath, f"{args.model}.pth")) # type: ignore
+        optimised_torchscript_model._save_for_lite_interpreter(os.path.join(filepath, f"{args.model}.ptl")) # type: ignore
 
         # save as artifact to wandb
         start_task("Saving Artifcats to WANDB")
@@ -182,7 +193,7 @@ def main():
         start_task(f"Evaluating Model")
         classes = data['test'].classes
         id2class = data['test'].id2class
-        y_true, y_pred, y_probs = get_predictions(trained_model, transform, loader['test'], device=args.device)
+        y_true, y_pred, y_probs = get_predictions(trained_model, transform, loader['test'])
 
         wandb.run.summary["test_accuracy"] = np.mean(y_true == y_pred) # pyright: ignore
 
