@@ -27,7 +27,7 @@ WIDTH       : int                   = 224
 
 # DATA
 SPLITS      : list[str]             = ["train", "val", "test"]
-SPLIT       : str                   = "test"
+SPLIT       : str                   = "train"
 RATIO       : float                 = 1.0
 TRAIN_RATIO : float                 = 0.8
 VAL_RATIO   : float                 = 0.2

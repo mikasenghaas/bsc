@@ -44,7 +44,7 @@ class ImageDataset(Dataset):
 
         return {"split": split,
                 "include_classes": include_classes,
-                "ratio": ratio, }
+                "ratio": ratio }
 
     def __init__(self, **kwargs):
         assert len(kwargs.keys()) > 0 and all(x in kwargs.keys() for x in ImageDataset.default_config().keys()), f"Class needs to be initialised with default values for 'filepath', 'split', 'include_classes' and 'ratio'."
