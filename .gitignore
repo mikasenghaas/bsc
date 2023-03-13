@@ -3,7 +3,6 @@
 **/models
 */test.py
 wandb
-artifacts
 .DS_Store
 
 # Byte-compiled / optimized / DLL files
