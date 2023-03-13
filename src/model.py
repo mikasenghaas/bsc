@@ -63,6 +63,8 @@ class FinetunedImageClassifier(nn.Module):
             self.model.fc = nn.Linear(self.model.fc.in_features, self.num_classes)
         elif self.model_name == 'alexnet':
             self.model.classifier[6] = nn.Linear(self.model.classifier[6].in_features, self.num_classes)
+        elif self.model_name == 'mobilenet-v3-small':
+            self.model.classifier[3] = nn.Linear(self.model.classifier[3].in_features, self.num_classes)
 
         # meta information
         self.meta = kwargs
