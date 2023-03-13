@@ -15,12 +15,12 @@ PROCESSED_DATA_PATH : str           = os.path.join(BASEPATH, "src", "data", "pro
 MODEL_PATH  : str                   = os.path.join(BASEPATH, "src", "models")
 
 # CLASSES
-CLASSES : list[str]                 = os.listdir(PROCESSED_DATA_PATH)
+CLASSES : list[str]                 = [label for label in os.listdir(os.path.join(PROCESSED_DATA_PATH, "train")) if not label.startswith(".")]
 GROUND_FLOOR : list[str]            = [x for x in CLASSES if x.find('Ground_Floor') >= 0]
 FIRST_FLOOR : list[str]             = [x for x in CLASSES if x.find('First_Floor') >= 0 or x == "Stairs_Atrium"]
 
 # PREPROCESS
-MAX_LENGTH  : int                   = 10 
+MAX_LENGTH  : int                   = 10
 FPS         : int                   = 4
 HEIGHT      : int                   = 224
 WIDTH       : int                   = 224
