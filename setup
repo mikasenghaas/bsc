@@ -17,17 +17,19 @@ then
   echo '$(pyenv virtualenv-init -)' >> ~/.bashrc
   exec "$SHELL"
 
-  # install pyenv-virtualenv and source shell
-  git clone https://github.com/pyenv/pyenv-virtualenv.git $(pyenv root)/plugins/pyenv-virtualenv
-  exec "$SHELL"
 
   exit
 fi
 printf "${GREEN}Success:${NC} Pyenv installed\n"
 
-
-if ! command -v "pyenv &> /dev/null
-  # install pyenv-virtualenv
+# install and setup pyenv-virtualenv if not installed
+if ! which pyenv-virtualenv &> /dev/null
+then
+  # install pyenv-virtualenv and source shell
+  git clone https://github.com/pyenv/pyenv-virtualenv.git $(pyenv root)/plugins/pyenv-virtualenv
+  exec "$SHELL"
+fi
+printf "${GREEN}Success:${NC} Pyenv-virtualenv installed\n"
 
 # install python (stable, most-recent 3.10)
 pyenv install 3.10
