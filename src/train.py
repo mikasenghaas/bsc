@@ -59,7 +59,7 @@ def train(model, transform, train_loader, val_loader, criterion, optim, schedule
             # normalise
             train_acc = running_correct / samples_seen
             train_loss = running_loss / samples_seen
-            
+
             pbar.set_description(f'{str(epoch).zfill(len(str(args.max_epochs)))}/{str(batch_num).zfill(len(str(len(train_loader))))} ({round(running_training_time / samples_seen * 1000, 1)}ms | {round(running_inference_time / samples_seen * 1000, 1)}ms) - Train: {train_loss:.3f} ({(train_acc * 100):.1f}%) - Val: {val_loss:.3f} ({(val_acc * 100):.1f}%)')
 
             # log epoch metrics for train and val split
@@ -129,8 +129,9 @@ def main():
     start_task("Initialising Data and Model")
 
     # initialise data
-    data = { split: ImageDataset(split=split, include_classes=args.include_classes, ratio=args.ratio) for split in SPLITS } 
+    data = { split: ImageDataset(split=split, include_classes=args.include_classes, ratio=args.ratio) for split in ["train", "val"] } 
     id2class, class2id = data["train"].id2class, data["train"].class2id
+    data["test"] = ImageDataset(split="test", include_classes=args.include_classes, ratio=args.ratio, class2id=class2id, id2class=id2class)
 
     # initialise transforms
     transform = ImageTransformer()
@@ -191,14 +192,12 @@ def main():
         wandb.log_artifact(artifact)
 
         start_task(f"Evaluating Model")
-        classes = data['test'].classes
-        id2class = data['test'].id2class
         y_true, y_pred, y_probs = get_predictions(trained_model, transform, loader['test'])
 
         wandb.run.summary["test_accuracy"] = np.mean(y_true == y_pred) # pyright: ignore
 
         # wandb visualisation
-        conf_matrix = wandb.plot.confusion_matrix(None, list(y_true), list(y_pred), classes) # pyright: ignore
+        conf_matrix = wandb.plot.confusion_matrix(None, list(y_true), list(y_pred), sorted(args.include_classes)) # pyright: ignore
         roc_curve = wandb.plot.roc_curve(y_true, y_probs) # pyright: ignore
         pr_curve = wandb.plot.pr_curve(y_true, y_probs) # pyright: ignore
 
