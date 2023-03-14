@@ -10,21 +10,45 @@ then
   # auto install from https://github.com/pyenv/pyenv
   curl https://pyenv.run | bash
 
+  # add pyenv to path
   echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
   echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
   echo 'eval "$(pyenv init -)"' >> ~/.bashrc
+
+  # load pyenv-virtualenv automatically
+  echo '$(pyenv virtualenv-init -)' >> ~/.bashrc
+
+  # source shell for changes to take effect
+  source ~/.bashrc
   exit
 fi
-printf "${GREEN}Success: ${NC}Pyenv installed\n"
+printf "${GREEN}Success:${NC} Pyenv installed\n"
+
+# install python (stable, most-recent 3.10)
+pyenv install 3.10
+printf "${GREEN}Success:${NC} Python 3.10 installed\n"
 
 # setup virtualenv
 pyenv virtualenv 3.10 bsc
+printf "${GREEN}Success:${NC} Activated virtualenv\n"
 
-# get requirements
+# load requirements
 pip install -r requirements.txt
+printf "${GREEN}Success:${NC} All dependencies installed\n"
 
 # make bash scripts executable
 chmod +x setup
-chmod +x run
+chmod +x train
+
+# extract data
+if [ -e src/data/processed.zip ]
+then
+  cd src/data
+  unzip processed.zip && rm -rf processed.zip
+  cd ../..
+  printf "${GREEN}Success:${NC} Extracted processed data\n"
+else 
+  printf "${GREEN}Success:${NC} Data already extracted\n"
+fi
 
 printf "${GREEN}Success: ${NC}Environment setup\n"
