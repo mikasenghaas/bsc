@@ -1,16 +1,31 @@
 # Custom
+
+# Ignore Directories
 **/data/processed/*
 **/data/raw/*
 models
-test.py
 wandb
+
+# Ignore Files
+test.py
 .DS_Store
+
+# Ignore Types
+*.mov
+*.MOV
+*.mp4
 
 # Ignore all artifacts except .ptl (torchscript lite models)
 artifacts/**/*.json
 artifacts/**/*.pt
 artifacts/**/*.pth
 artifacts/**/*.pkl
+
+# Ignore Assets
+qr.png
+playtorch.png
+playtorch-logo.png
+maps-50.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
