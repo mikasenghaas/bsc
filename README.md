@@ -1,151 +1,143 @@
-# BSc. DS - Mika Senghaas
+# Training and Deploying Computer Vision Models for Indoor Localisation on the Edge
 
-This repository is under _active developement_.
+⚠️ _This repository is under active development._
+
+<div style="display: flex">
+<div style="margin-right: 30px">
+<blockquote >
+Localisation is at the core of numerous localisation-based applications (LBAs). While digital solutions for outdoor positioning like GPS are wide-spread, similar systems in indoor spaces are rare and not unified in their approach. Most current solutions depend on additionally installed hardware in the indoor space, which is costly to install and maintain, inconvenient in the usage and often raises data privacy concerns. Therefore, this projects explores the possibilities of using machine learning (computer vision) to build a performant offline indoor positioning system.
+</blockquote>
+<p>
+The goal of this project is to train and deploy models that can predict where a user is located out of a fixed set of location labels for some indoor space.
+</p>
+<p>
+On the right you can see a real-time inference of a video clip from the test split, which is overlayed with the attention heat map produced by the <a href="https://arxiv.org/abs/1610.02391">GradCam</a> algorithm. In the top-left corner the currently predicted location label and the model's confidence in the prediction are shown.
+</p>
+</div>
+<img src="./assets/live-inference-gradcam.gif" height="400px"/>
+</div>
+
+## 📱 Preview
+
+You can try out a selection of trained models on your mobile phone! They are deployed using [PlayTorch](https://playtorch.dev) so that  . PlayTorch is a React Native (Typescript) bridge to the [PlayTorch Mobile SDK](https://pytorch.org/mobile/home/), which allows for rapid development of mobile demos. To try it out yourself follow these steps:
+
+<div style="display: flex; justify-content: space-between; align-items: center">
+   <ol>
+      <li>Download the PlayTorch App in the <a href="https://apps.apple.com/us/app/playtorch/id1632121045">App Store</a> (iOS) or <a href="https://play.google.com/store/apps/details?id=dev.playtorch&hl=en&gl=US&pli=1">Play Store</a> (Android)</li>
+      <li> Open the App and scan the QR code on the right</li>
+      <li>Go to the <a href="https://goo.gl/maps/e4v5dupcQgcbKuxS9">Institut for Medier, Erkendelse og Formidling</a>.</li>
+   </ol>
+   <img src="./assets/qr-180.png" height=150 width=150>
+</div>
+
+🔥 You are all set. Walk around the indoor space and observe the model's predictions.
 
 ## ⚙️ Setup
 
-This project uses virtual environments (called `venv`) to easily replicate the Python environment originally used to produce the results. This includes a Python Version and the list of all Python packages (from PyPi) with their version requirements.
+### Bootstrapping with Setup Script
 
-`pyenv-virtualenv` ([GitHub](https://github.com/pyenv/pyenv-virtualenv)) is used to manage both the Python version and external packages. It is a lightweight wrapper around the `pyenv` project ([Github](https://github.com/pyenv/pyenv)).
-
-To setup the environment just run the bash script `setup` at the project root. It checks your path for the `pyenv` binaries and installs them from the official repository (using their automatic installation script). It then creates (if not yet present) the virtual environment and installs al dependencies. Re-running the script will not have any effect.
+The backbone of the project is written exclusively in Python. The quickest way to create a working Python environment to reproduce the results, train your own models etc. is to use the `setup` script. The script uses [`pyenv`](https://github.com/pyenv/pyenv) for managing the Python version and [`pyenv-virtualenv`](https://github.com/pyenv/pyenv-virtualenv) to resolve a virtual environment.
 
 ```bash
 chmod +x setup && ./setup
 ```
 
-To check that the environment is set up correctly, run the following list of commands.
+The script installs `pyenv`, `pyenv-virtualenv` and Python `3.10`. After that, it creates a virtual env called `bsc` with all dependencies installed and lastly extracts the processed training and test data.
+
+### Custom Environment Tool
+
+If you are using a different tool for handling Python versions and virtual environments, such as the natively shipped `python -m venv` or `conda`, and you want to use these, feel free to create a virtual environment using them. Then install all dependencies into:
 
 ```bash
-pyenv version
+pip install -r requirements.txt
 ```
 
-This checks if `pyenv` is installed and the `bsc` virtual environment is installed.
-The output should be `bsc (set by /User/<user>/<path>/bsc/.python-version)`.
+To extract all data navigate into the directory `src/data` and unzip `processed.zip`.
+
+```bash
+cd src/data
+unzip processed.zip && rm -rf processed.zip
+```
+
+### Troubleshooting
+
+Check that your Python version is `3.10.X`:
 
 ```bash
 python --version
 ```
 
-The output should be `Python 3.10.X` (by default the latest stable release of Python `3.10` is installed).
-
-Check whether all processed images are downloaded by verifying that the path `/src/data/processed` exists:
+Check that you have installed all relevant dependencies by running inline Python on a subset of the external packages:
 
 ```bash
-ls src/data/processed
+python -c "import numpy; import torch; import torchvision"
 ```
 
-Lastly, check if all package dependencies are installed.
+Check whether all images are downloaded by verifying that the path `/src/data/processed` exists. The below command should not return an error code.
 
 ```bash
-pip list
+test -e src/data/processed
 ```
 
-It lists all packages and their versions. Make sure that you can find all packages listed in the `requirements.txt` file. Alternatively, you can run execute this inline Python expression. If the expressions runs without errors, you are ready to go!
+## 🚀 Running the Project
+
+There is a number of different Python scripts and notebooks that enable you to produce results.
+
+All model and data configurations that are used for evaluating the experiments mentioned in the final report are specified in the `train` script, which you can simply run using `./train` from the root.
+
+If you want to train, infer or do other some yourself, you will have to run the corresponding scripts individually.
+
+_Note, that all scripts must be run from the root of the project for paths to resolve properly._
+
+### Training
+
+The `train.py` script is the central script to train _different models_, on different _data configurations_ and with different hyperparameters. For example, to train ResNet18 on all data using default hyperparameters and logging to W&B:
 
 ```bash
-python -c "import torch"
+python src/train.py -M resnet18 --all-classes --wandb-log
 ```
 
-## 💾 Data and Preprocessing
+Find out more about all hyperparameters that you can tweak by running:
 
-All data within this project was gathered by myself over the period of a couple of weeks. A single sample `(x,y)` is a mapping between a high-dimensional sensory input data `x` and a location label `y`. The project experiments with the input data `x` being both single images (tensors of shape `(C, H, W)`) or sequences of images, aka. videos (tensor of shape `(F, C, H, W)`).
+```txt
+$ python src/train.py -h
 
-For the scope of this project, the chosen location is the [Institut for Medier, Erkendelse og Formidling](https://goo.gl/maps/e4v5dupcQgcbKuxS9), which is located at the Southern Campus of the Copenhagen University on Amagerbro (2300 Copenhagen). There are multiple reasons for why the location was found suitable:
+usage: train.py [-h] -M MODEL [-V VERSION] [--pretrained | --no-pretrained] [--filepath FILEPATH]
+                [--include-classes INCLUDE_CLASSES [INCLUDE_CLASSES ...]] [--all-classes | --no-all-classes]
+                [--ground-floor | --no-ground-floor] [--first-floor | --no-first-floor] [--ratio RATIO]
+                [--device {cpu,cuda,mps}] [--wandb-log | --no-wandb-log] [--wandb-name WANDB_NAME]
+                [--wandb-group WANDB_GROUP] [--wandb-tags WANDB_TAGS [WANDB_TAGS ...]] [--max-epochs MAX_EPOCHS]
+                [--batch-size BATCH_SIZE] [--lr LR] [--step-size STEP_SIZE] [--gamma GAMMA]
+```
 
-- The space is **large** and **compartmentalised** (e.g. in floors), which allows to make the complexity of the location prediction incrementally more complex over time without having to switch location
-- The location has many **characteristic features**, which are assumed to be learnable by the computer vision model
-- The location is **located near me**, which allows for easy data gathering and extension of the dataset over multiple weeks
+_For more detailed output run the command yourself._
 
-### Splits
+### Inference
 
-To assess how well the model generalises to variying external factors, like weather, people crossing the frame, etc. the video clips are separated into a `train` and `test` split.
+The `infer.py` script loads a random video clip from a specified data split and runs live predictions of a trained model that was logged to W&B, which are overlayed and displayed as a video instance.
 
-The `train` split contains video clips that capture the entire indoor space on a single day.
-
-The `test` split contains video clips that were captured over multiple weeks to simulate naturally ocurring variance in the indoor space over time.
-
-### Raw Video Clips and Annotation
-
-A single raw data sample is a video clip captured while walking through the building. The height, angle and movement of the phone during recording tried to mimick how a user would use an app for inferring location. A raw video clip is typically in between 30-120s, leading to an uncompressed video size of up to `100MB`.
-
-To allow for automatic processing of the raw videos, a specific directory structure and annotation method has to be used. All video clips are located in the folder `src/data/raw/train` or `src/data/raw/test`. A single raw video is identified by the year (`YY`), month (`MM`), day (`DD`) and video number (`VN`) on that specific day. The different features are combined into a video identifier of the general format `YYMMDD_VN`.
-
-As an example, the first raw video recorded on March 13th 2023 the directory `230313_01` is created `YYMMDD_XX`). 
-
-The video identifier serves as a name for the subdirectory within the base data path. This subdirectory is expected to contain _exactly_ two file:
-
-- The raw **video clip**,  named `video.mov`
-- A plaintext **annotation file**, named `annotations`, which annotates the video with corresponding location label. The formatting of the file matters for the automatic extraction to work. If the video clip shows location `Ground_Floor_Atrium` in between seconds 0 to 20 and after that `Ground_Floor_Red_Area` the file _must_ look like this:
-
-   ```txt
-   00:00,Ground_Floor_Atrium
-   00:20,Ground_Floor_Red_Area
-   ```
-
-After all video clips located in the correct directory, correctly named, as well as annotated, your project should have this directory structure in the raw data path:
+For example, to predict on a random video clip from the test split using Version `v0` of the Resnet18 model class, run:
 
 ```bash
-src/data/raw
-├── test
-│  ├── 230309_01
-│  │  ├── annotations
-│  │  └── video.mov
-│  ├── ...
-└── train
-   ├── 230222_01
-   │  ├── annotations
-   │  └── video.mov
-   ├── ...
+python src/infer.py -M resnet18 -V v0 --test
 ```
 
-### Extract Frames
+You can overlay a heatmap generated by the [GradCam]() algorithm to display the relevance of image regions for the final predictions by activating the `--gradcam` flag. Run the `-h` flag to see a summary of all parameters that can be specified.
 
-To extract all frames, which are going to be fed into the model, one can run the `preprocess.py` script to automatically extract frames from the clips in the `train` or `test` split. Running the script from the root directory of this project with the `-h` flag gives
+```txt
+$ python src/infer.py -h
 
-```bash
-usage: preprocess.py [-h] [--split {train,test}] [--max-length MAX_LENGTH]
-                     [--fps FPS]
-
-options:
-  -h, --help            show this help message and exit
-  --split {train,test}  Which split to extract clips from
-  --max-length 10       Maximum number of frames per extracted clip
-  --fps 4               Number of frames per second (FPS) to extract
+usage: infer.py [-h] -M MODEL [-V VERSION] [--pretrained | --no-pretrained] [--device {cpu,cuda,mps}]
+                [--gradcam | --no-gradcam] [--split {train,val,test}] [--clip CLIP]
 ```
 
-Thus, to preprocess all clips in the `train` and `test` split using default parameters, run the following commands:
+_For more detailed output run the command yourself._
 
-```bash
-python src/preprocess.py --split train
-python src/preprocess.py --split test
-```
+### Notebooks
 
-All of this should generate a directory `src/data/preprocessed` with subdirectories `train` and `test`, each having subdirectories of all classes that were extracted. Each class directory contains a series of video clips (subclips from the raw video clips), which are identified through the same parameteres as the video (year (`YY`), month (`MM`), day (`DD`), video number (`VN`)) as well as a clip number (`CN`). This leads to a total clip identifier of `YYMMDD_VN_CN`, which serves as a directory names that contains all frames of that clip. Each frame has a unique number `FN` and is of format `.jpg`.
+There is a number of Jupyter Notebooks in the directory `notebooks`. Each should be self-explanatory when following them block-by-block, so I will just list what each of the includes here:
 
-This leads to the following structure.
-
-```bash
-src/data/processed
-├── test
-│  ├── First_Floor_Corridor_1
-│  │  ├── 230309_03_01
-│  │  │  ├── 01.jpg
-│  │  │  ├── ...
-│  │  ├── ...
-│  ├── ...
-└── train
-   ├── First_Floor_Corridor_1
-   │  ├── 230302_01_04
-   │  │  ├── 01.jpg
-   │  │  ├── ...
-   │  ├── ...
-   ├── ...
-```
-
-If you're  
-
-## Running the Project
-
-
-## Notebooks
+- `eda.ipynb` contains some verifications and basic data analysis on the gathered dataset
+- `train.ipynb` shows how to fine-tune an image or video classifier for indoor localisation
+- `evaluate.ipynb` contains a series of evaluation techniques for trained models that have been logged to W&B
+- `optimise.ipynb` optimises a trained PyTorch model for mobile deployment
