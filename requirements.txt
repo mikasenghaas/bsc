@@ -1,9 +1,11 @@
+ffmpeg
 grad-cam
 numpy
 opencv-python
 pandas
 scikit-learn
 seaborn
+termcolor
 torch
 torchvision
 tqdm
