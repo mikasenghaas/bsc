@@ -12,6 +12,8 @@ python src/train.py -M resnet18 --first-floor --wandb-group experiment2 --wandb-
 python src/train.py -M resnet18 --all-classes --wandb-group experiment2 --wandb-name resnet18-all --wandb-log
 
 # experiment 3: baseline model/ different number of samples
+python src/train.py -M resnet18 --all-classes --ratio 0.05 --wandb-group experiment3 --wandb-name resnet18-05 --wandb-log
+python src/train.py -M resnet18 --all-classes --ratio 0.1 --wandb-group experiment3 --wandb-name resnet18-10 --wandb-log
 python src/train.py -M resnet18 --all-classes --ratio 0.25 --wandb-group experiment3 --wandb-name resnet18-25 --wandb-log
 python src/train.py -M resnet18 --all-classes --ratio 0.50 --wandb-group experiment3 --wandb-name resnet18-50 --wandb-log
 python src/train.py -M resnet18 --all-classes --ratio 0.75 --wandb-group experiment3 --wandb-name resnet18-75 --wandb-log
