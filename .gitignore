@@ -1,9 +1,16 @@
 # Custom
-**/data
-**/models
-*/test.py
+**/data/processed/*
+**/data/raw/*
+models
+test.py
 wandb
 .DS_Store
+
+# Ignore all artifacts except .ptl (torchscript lite models)
+artifacts/**/*.json
+artifacts/**/*.pt
+artifacts/**/*.pth
+artifacts/**/*.pkl
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
