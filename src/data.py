@@ -34,7 +34,7 @@ class ImageDataset(Dataset):
     def default_config():
         """
         Staticmethod that contains all expected arguments for initialising a ImageDataset 
-        object. The values are taken from config.py. Use this method either on the the class like
+        object. The values are taken from config.py. Use this method either on the class like
         ImageDataset.default_config()
         """
         # default configuration for ImageDataset
@@ -53,6 +53,10 @@ class ImageDataset(Dataset):
         self.split = kwargs['split']
         self.include_classes = kwargs['include_classes']
         self.ratio = kwargs['ratio']
+        if "class2id" in kwargs:
+            self.class2id = kwargs["class2id"]
+        if "id2class" in kwargs:
+            self.id2class = kwargs["id2class"]
 
         # pre conditions
         assert self.split in SPLITS, "Split must be either 'train', 'val' or 'test'"
@@ -94,8 +98,10 @@ class ImageDataset(Dataset):
         self.class_distribution = { k: len(v) for k, v in self.images_by_class.items()}
         self.classes = list(self.class_distribution.keys())
         self.num_classes = len(self.classes)
-        self.class2id = { l: i for i, l in enumerate(self.classes) }
-        self.id2class = { i: l for i, l in enumerate(self.classes) }
+        if "class2id" not in kwargs:
+            self.class2id = { l: i for i, l in enumerate(self.classes) }
+        if "id2class" not in kwargs:
+            self.id2class = { i: l for i, l in enumerate(self.classes) }
 
         # meta information to log
         self.meta = kwargs
@@ -156,11 +162,4 @@ class VideoDataset(Dataset):
         return video_tensor, label_id
 
     def __len__(self):
-        if self.split == "train":
-            return int(self.num_samples * TRAIN_RATIO)
-        elif self.split == "val":
-            return int(self.num_samples * VAL_RATIO)
-        elif self.split == "test":
-            return int(self.num_samples * TEST_RATIO)
-        else:
-            raise Exception
+        return self.num_samples
