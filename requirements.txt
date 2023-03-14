@@ -1,9 +1,10 @@
+grad-cam
 numpy
+opencv-python
+pandas
+scikit-learn
+seaborn
 torch
 torchvision
-wandb
-matplotlib
-scikit-learn
-matplotlib
-seaborn
 tqdm
+wandb
