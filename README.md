@@ -2,33 +2,21 @@
 
 ⚠️ _This repository is under active development._
 
-<div style="display: flex">
-<div style="margin-right: 30px">
-<blockquote >
+<img align="right" src="./assets/live-inference-gradcam.gif" height="400px"/>
+
 Localisation is at the core of numerous localisation-based applications (LBAs). While digital solutions for outdoor positioning like GPS are wide-spread, similar systems in indoor spaces are rare and not unified in their approach. Most current solutions depend on additionally installed hardware in the indoor space, which is costly to install and maintain, inconvenient in the usage and often raises data privacy concerns. Therefore, this projects explores the possibilities of using machine learning (computer vision) to build a performant offline indoor positioning system.
-</blockquote>
-<p>
-The goal of this project is to train and deploy models that can predict where a user is located out of a fixed set of location labels for some indoor space.
-</p>
-<p>
-On the right you can see a real-time inference of a video clip from the test split, which is overlayed with the attention heat map produced by the <a href="https://arxiv.org/abs/1610.02391">GradCam</a> algorithm. In the top-left corner the currently predicted location label and the model's confidence in the prediction are shown.
-</p>
-</div>
-<img src="./assets/live-inference-gradcam.gif" height="400px"/>
-</div>
+
+The goal of this project is to train and deploy models that can predict where a user is located out of a fixed set of location labels for some indoor space. On the right you can see an example of the final result: Real-time inference on an unseen example video clip.
 
 ## 📱 Preview
 
 You can try out a selection of trained models on your mobile phone! They are deployed using [PlayTorch](https://playtorch.dev) so that  . PlayTorch is a React Native (Typescript) bridge to the [PlayTorch Mobile SDK](https://pytorch.org/mobile/home/), which allows for rapid development of mobile demos. To try it out yourself follow these steps:
 
-<div style="display: flex; justify-content: space-between; align-items: center">
-   <ol>
-      <li>Download the PlayTorch App in the <a href="https://apps.apple.com/us/app/playtorch/id1632121045">App Store</a> (iOS) or <a href="https://play.google.com/store/apps/details?id=dev.playtorch&hl=en&gl=US&pli=1">Play Store</a> (Android)</li>
-      <li> Open the App and scan the QR code on the right</li>
-      <li>Go to the <a href="https://goo.gl/maps/e4v5dupcQgcbKuxS9">Institut for Medier, Erkendelse og Formidling</a>.</li>
-   </ol>
-   <img src="./assets/qr-180.png" height=150 width=150>
-</div>
+<img align="right" src="./assets/qr-180.png" height=150 width=150>
+
+1. Download the PlayTorch App in the [App Store](https://apps.apple.com/us/app/playtorch/id1632121045) (iOS) or [Play Store](https://play.google.com/store/apps/details?id=dev.playtorch&hl=en&gl=US&pli=1) (Android)
+2. Open the App and scan the QR code on the right
+3. Go to the [Institut for Medier, Erkendelse og Formidling](https://goo.gl/maps/e4v5dupcQgcbKuxS9)
 
 🔥 You are all set. Walk around the indoor space and observe the model's predictions.
 
