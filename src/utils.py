@@ -33,7 +33,6 @@ def add_wandb_args(group):
     group.add_argument("--wandb-tags", nargs="+", default=[], help="Experiment Tags (WANDB)")
 
 def add_data_args(group):
-    group.add_argument("--filepath", type=str, default=len(load_labels(PROCESSED_DATA_PATH)), help=f"List of classes to include in training")
     group.add_argument("--include-classes", nargs="+", default=[], help=f"List of classes to include in training") # TODO
     group.add_argument("--all-classes", action=argparse.BooleanOptionalAction, default=False, help="Adds all classes in category 'Ground Floor' to training")
     group.add_argument("--ground-floor", action=argparse.BooleanOptionalAction, default=False, help="Adds all classes in category 'Ground Floor' to training")
