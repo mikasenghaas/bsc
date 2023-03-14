@@ -112,6 +112,7 @@ def load_infer_args() -> argparse.Namespace:
 
     # infer args
     infer_group = parser.add_argument_group(title="Inference Arguments")
+    infer_group.add_argument("--gradcam", action=argparse.BooleanOptionalAction, default=False, help="Whether to run and overlay GradCam during inference")
     infer_group.add_argument("--split", choices=SPLITS, default="test", help="From where to get the clip from")
     infer_group.add_argument("--clip", type=str, default=None, help="Which clip to sample")
 
@@ -274,6 +275,7 @@ def load_json(filepath: str):
 def get_predictions(model, transforms, loader):
     # load and predict on test split
     model.to(DEVICE)
+    model.eval()
     y_true, y_pred, y_probs = None, None, None
     for batch_num, (inputs, labels) in enumerate(loader):
         inputs = inputs.to(DEVICE)
