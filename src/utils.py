@@ -301,6 +301,20 @@ def mkdir(filepath: str) -> bool:
     return False
 
 
+def ls(filepath: str) -> list[str]:
+    """
+    Return all file and directory names in sorted order within the given filepath (excluding hidden files).
+
+    Args:
+        filepath (str): Path to the directory containing the labelled images
+
+    Returns:
+        list: List of files and directories within the given filepath
+    """
+    return sorted([path for path in os.listdir(
+        filepath) if not path.startswith('.')])
+
+
 def start_task(task: str, get_timer: bool = False) -> float | None:
     """
     Print a colored task to the console; Optionally returns which can be passed to end_tast, otherwise None.
@@ -556,20 +570,6 @@ def get_label(second_in_video: int, annotations: list[tuple[str, str]]) -> str:
 
     # if second in video is greater than all timestamps, return the last label
     return annotations[-1][1]
-
-
-def load_labels(filepath: str) -> list[str]:
-    """
-    Load the labels, which are the directory names within a given filepath.
-
-    Args:
-        filepath (str): Path to the directory containing the labelled images
-
-    Returns:
-        list: List of labels
-    """
-    return sorted([path for path in os.listdir(
-        filepath) if not path.startswith('.')])
 
 
 def load_labelled_image_paths(
