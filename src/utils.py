@@ -37,12 +37,10 @@ def add_general_args(group: argparse._ArgumentGroup) -> None:
     group.add_argument(
         "--device",
         type=str,
-        choices=[
-            "cpu",
-            "cuda",
-            "mps"],
+        choices=["cpu", "cuda", "mps"],
         default=DEVICE,
-        help="Training Device")
+        help="Training Device",
+    )
 
 
 def add_wandb_args(group: argparse._ArgumentGroup) -> None:
@@ -56,22 +54,17 @@ def add_wandb_args(group: argparse._ArgumentGroup) -> None:
         "--wandb-log",
         action=argparse.BooleanOptionalAction,
         default=LOG,
-        help="Log to WANDB")
+        help="Log to WANDB",
+    )
     group.add_argument(
-        "--wandb-name",
-        type=str,
-        default="",
-        help="Experiment Group (WANDB)")
+        "--wandb-name", type=str, default="", help="Experiment Group (WANDB)"
+    )
     group.add_argument(
-        "--wandb-group",
-        type=str,
-        default="",
-        help="Experiment Group (WANDB)")
+        "--wandb-group", type=str, default="", help="Experiment Group (WANDB)"
+    )
     group.add_argument(
-        "--wandb-tags",
-        nargs="+",
-        default=[],
-        help="Experiment Tags (WANDB)")
+        "--wandb-tags", nargs="+", default=[], help="Experiment Tags (WANDB)"
+    )
 
 
 def add_data_args(group):
@@ -85,27 +78,32 @@ def add_data_args(group):
         "--include-classes",
         nargs="+",
         default=[],
-        help=f"List of classes to include in training")
+        help=f"List of classes to include in training",
+    )
     group.add_argument(
         "--all-classes",
         action=argparse.BooleanOptionalAction,
         default=False,
-        help="Adds all classes in category 'Ground Floor' to training")
+        help="Adds all classes in category 'Ground Floor' to training",
+    )
     group.add_argument(
         "--ground-floor",
         action=argparse.BooleanOptionalAction,
         default=False,
-        help="Adds all classes in category 'Ground Floor' to training")
+        help="Adds all classes in category 'Ground Floor' to training",
+    )
     group.add_argument(
         "--first-floor",
         action=argparse.BooleanOptionalAction,
         default=False,
-        help="Adds all classes in category 'First Floor' to training")
+        help="Adds all classes in category 'First Floor' to training",
+    )
     group.add_argument(
         "--ratio",
         type=float,
         default=RATIO,
-        help="Randomly sample a ratio of samples in every class")
+        help="Randomly sample a ratio of samples in every class",
+    )
 
 
 def add_model_args(group):
@@ -116,22 +114,21 @@ def add_model_args(group):
         group (argparse._ArgumentGroup): Argument group to add arguments to
     """
     group.add_argument(
-        "-M",
-        "--model",
-        type=str,
-        help="Model Identifier",
-        required=True)
+        "-M", "--model", type=str, help="Model Identifier", required=True
+    )
     group.add_argument(
         "-V",
         "--version",
         type=str,
         default="latest",
-        help="Model Version. Either 'latest' or 'vX'")
+        help="Model Version. Either 'latest' or 'vX'",
+    )
     group.add_argument(
         "--pretrained",
         action=argparse.BooleanOptionalAction,
         default=PRETRAINED,
-        help="Finetune pre-trained model")
+        help="Finetune pre-trained model",
+    )
 
 
 def load_preprocess_args() -> argparse.Namespace:
@@ -146,21 +143,22 @@ def load_preprocess_args() -> argparse.Namespace:
     # preprocess args
     parser.add_argument(
         "--split",
-        choices=[
-            "train",
-            "test"],
+        choices=["train", "test"],
         default="train",
-        help="Which split to extract clips from")
+        help="Which split to extract clips from",
+    )
     parser.add_argument(
         "--max-length",
         type=int,
         default=MAX_LENGTH,
-        help="Maximum number of frames per extracted clip")
+        help="Maximum number of frames per extracted clip",
+    )
     parser.add_argument(
         "--fps",
         type=int,
         default=FPS,
-        help="Number of frames per second (FPS) to extract")
+        help="Number of frames per second (FPS) to extract",
+    )
 
     args = parser.parse_args()
     return args
@@ -190,30 +188,26 @@ def load_train_args() -> argparse.Namespace:
     # add training args
     train_group = parser.add_argument_group(title="Training Arguments")
     train_group.add_argument(
-        "--max-epochs",
-        type=int,
-        default=MAX_EPOCHS,
-        help="Maximum Epochs")
+        "--max-epochs", type=int, default=MAX_EPOCHS, help="Maximum Epochs"
+    )
     train_group.add_argument(
         "--batch-size",
         type=int,
         default=BATCH_SIZE,
-        help="Batch Size in Training and Validation Loader")
+        help="Batch Size in Training and Validation Loader",
+    )
     train_group.add_argument(
-        "--lr",
-        type=float,
-        default=LR,
-        help="Learning Rate for Optimiser")
+        "--lr", type=float, default=LR, help="Learning Rate for Optimiser"
+    )
     train_group.add_argument(
         "--step-size",
         type=int,
         default=STEP_SIZE,
-        help="Step Size for Scheduler")
+        help="Step Size for Scheduler",
+    )
     train_group.add_argument(
-        "--gamma",
-        type=float,
-        default=GAMMA,
-        help="Gamma for Scheduler")
+        "--gamma", type=float, default=GAMMA, help="Gamma for Scheduler"
+    )
 
     # parse args
     args = parser.parse_args()
@@ -260,25 +254,25 @@ def load_infer_args() -> argparse.Namespace:
         "--gradcam",
         action=argparse.BooleanOptionalAction,
         default=False,
-        help="Whether to run and overlay GradCam during inference")
+        help="Whether to run and overlay GradCam during inference",
+    )
     infer_group.add_argument(
         "--split",
         choices=SPLITS,
         default="test",
-        help="From where to get the clip from")
+        help="From where to get the clip from",
+    )
     infer_group.add_argument(
-        "--clip",
-        type=str,
-        default=None,
-        help="Which clip to sample")
+        "--clip", type=str, default=None, help="Which clip to sample"
+    )
 
     # parse args
     args = parser.parse_args()
 
     if args.clip is not None:
         assert args.clip in os.listdir(
-            os.path.join(
-                RAW_DATA_PATH, args.split)), f"{args.clip} must be in {os.path.join(RAW_DATA_PATH, args.split)}"
+            os.path.join(RAW_DATA_PATH, args.split)
+        ), f"{args.clip} must be in {os.path.join(RAW_DATA_PATH, args.split)}"
 
     return args
 
@@ -293,8 +287,8 @@ def mkdir(filepath: str) -> bool:
     Returns:
         bool: True if directory was created, False if it already exists
     """
-    if filepath.find('.') >= 0:
-        filepath = '/'.join(filepath.split('/')[:-1])
+    if filepath.find(".") >= 0:
+        filepath = "/".join(filepath.split("/")[:-1])
     if not os.path.exists(filepath):
         os.makedirs(filepath)
         return True
@@ -311,8 +305,9 @@ def ls(filepath: str) -> list[str]:
     Returns:
         list: List of files and directories within the given filepath
     """
-    return sorted([path for path in os.listdir(
-        filepath) if not path.startswith('.')])
+    return sorted(
+        [path for path in os.listdir(filepath) if not path.startswith(".")]
+    )
 
 
 def start_task(task: str, get_timer: bool = False) -> float | None:
@@ -345,7 +340,9 @@ def end_task(task: str, start_time: float | None = None) -> None:
         print(
             colored(
                 f"> Finished {task} in {datetime.timedelta(seconds=int(timeit.default_timer() - start_time))}",
-                "green"))
+                "green",
+            )
+        )
     else:
         print(colored(f"> Finished {task}", "green"))
 
@@ -360,7 +357,7 @@ def load_metadata(filepath: str) -> dict:
     Returns:
         dict: Metadata of video file
     """
-    meta = ffmpeg.probe(filepath).get('format')
+    meta = ffmpeg.probe(filepath).get("format")
     return meta
 
 
@@ -377,7 +374,7 @@ def load_annotations(filepath: str) -> list[tuple[str, str]]:
     targets = []
     with open(filepath, "r") as file:
         for line in file:
-            timestamp, label = line.strip().split(',')
+            timestamp, label = line.strip().split(",")
             targets.append((timestamp, label))
 
     return targets  # type: ignore
@@ -406,7 +403,7 @@ def unnormalise_image(image_tensor: torch.Tensor) -> torch.Tensor:
     Returns:
         torch.Tensor: Unnormalised image tensor
     """
-    return (image_tensor * STD[:, None, None] + MEAN[:, None, None])
+    return image_tensor * STD[:, None, None] + MEAN[:, None, None]
 
 
 def get_summary(args: dict) -> pd.Series:
@@ -422,8 +419,13 @@ def get_summary(args: dict) -> pd.Series:
     return pd.Series(args)
 
 
-def show_image(image_tensor: torch.Tensor, title: str | None = None,
-               unnormalise: bool = False, ax: plt.Axes = None, show: bool = False) -> None:
+def show_image(
+    image_tensor: torch.Tensor,
+    title: str | None = None,
+    unnormalise: bool = False,
+    ax: plt.Axes = None,
+    show: bool = False,
+) -> None:
     """
     Display an image tensor using matplotlib. Can take unnormalised image tensor with unnormalise=False or normalised image tensor with unnormalise=True.
 
@@ -447,7 +449,7 @@ def show_image(image_tensor: torch.Tensor, title: str | None = None,
         _, ax = plt.subplots()  # pyright: ignore
     if unnormalise:
         image_tensor = unnormalise_image(image_tensor)
-    image_tensor = transforms.ToPILImage()(image_tensor.to('cpu'))
+    image_tensor = transforms.ToPILImage()(image_tensor.to("cpu"))
     ax.imshow(image_tensor)
     ax.set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
     if title is not None:
@@ -456,8 +458,12 @@ def show_image(image_tensor: torch.Tensor, title: str | None = None,
         plt.show()
 
 
-def show_images(image_tensors: torch.Tensor,
-                titles: list[str] | None = None, unnormalise: bool = False, ax: plt.Axes = None):
+def show_images(
+    image_tensors: torch.Tensor,
+    titles: list[str] | None = None,
+    unnormalise: bool = False,
+    ax: plt.Axes = None,
+):
     """
     Display a grid of image tensors using matplotlib by utilising the show_image function.
 
@@ -469,23 +475,28 @@ def show_images(image_tensors: torch.Tensor,
 
     n = len(image_tensors)
     dim = int(math.sqrt(n))
-    fig, ax = plt.subplots(figsize=(16, 16), ncols=dim,
-                           nrows=dim)  # pyright: ignore
+    fig, ax = plt.subplots(
+        figsize=(16, 16), ncols=dim, nrows=dim
+    )  # pyright: ignore
     if titles is None:
         titles = ["Unnamed Video Frame"] * n
     for i in range(dim):
         for j in range(dim):
             idx = i * (dim) + j
-            show_image(image_tensors[idx],
-                       title=titles[idx],
-                       unnormalise=unnormalise,
-                       ax=ax[i,
-                             j])  # pyright: ignore
+            show_image(
+                image_tensors[idx],
+                title=titles[idx],
+                unnormalise=unnormalise,
+                ax=ax[i, j],
+            )  # pyright: ignore
     plt.show()
 
 
-def show_video(video_tensor: torch.Tensor, title: str |
-               None = None, unnormalise: bool = True) -> None:
+def show_video(
+    video_tensor: torch.Tensor,
+    title: str | None = None,
+    unnormalise: bool = True,
+) -> None:
     """
     Display a video tensor using matplotlib's animation module. Can take unnormalised video tensor with unnormalise=False or normalised video tensor with unnormalise=True.
 
@@ -502,7 +513,8 @@ def show_video(video_tensor: torch.Tensor, title: str |
 
     if unnormalise:
         video_tensor = torch.cat(
-            [unnormalise_image(frame).unsqueeze(0) for frame in video_tensor])
+            [unnormalise_image(frame).unsqueeze(0) for frame in video_tensor]
+        )
 
     # Display the gif using matplotlib's animation module
     fig, ax = plt.subplots()
@@ -517,11 +529,8 @@ def show_video(video_tensor: torch.Tensor, title: str |
         return [im]
 
     a = animation.FuncAnimation(
-        fig,
-        animate,
-        frames=len(video_tensor),
-        interval=1,
-        blit=True)
+        fig, animate, frames=len(video_tensor), interval=1, blit=True
+    )
     plt.show()
 
 
@@ -535,7 +544,7 @@ def timestamp_to_second(timestamp: str) -> int:
     Returns:
         int: Timestamp in seconds
     """
-    mm, ss = map(int, timestamp.split(':'))
+    mm, ss = map(int, timestamp.split(":"))
     return mm * 60 + ss
 
 
@@ -573,7 +582,8 @@ def get_label(second_in_video: int, annotations: list[tuple[str, str]]) -> str:
 
 
 def load_labelled_image_paths(
-        filepath: str) -> dict[str, list[tuple[str, str]]]:
+    filepath: str,
+) -> dict[str, list[tuple[str, str]]]:
     """
     Load the labelled image paths from a given filepath.
 
@@ -597,7 +607,7 @@ def load_labelled_image_paths(
     labelled_image_paths = {}
 
     for label_paths in glob.glob(os.path.join(filepath, "*")):
-        label = label_paths.split('/')[-1]
+        label = label_paths.split("/")[-1]
         labelled_image_paths[label] = []
         for path in glob.glob(os.path.join(label_paths, "**/**")):
             labelled_image_paths[label].append((path, label))

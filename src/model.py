@@ -17,23 +17,23 @@ from config import *
 from utils import *
 
 MODELS = {
-    'alexnet': alexnet,
-    'resnet18': resnet18,
-    'resnet50': resnet50,
-    'mobilenet-v3-small': mobilenet_v3_small
+    "alexnet": alexnet,
+    "resnet18": resnet18,
+    "resnet50": resnet50,
+    "mobilenet-v3-small": mobilenet_v3_small,
 }
 
 WEIGHTS = {
-    'alexnet': AlexNet_Weights.DEFAULT,
-    'resnet18': ResNet18_Weights.DEFAULT,
-    'resnet50': ResNet50_Weights.DEFAULT,
-    'mobilenet-v3-small': MobileNet_V3_Small_Weights.DEFAULT
+    "alexnet": AlexNet_Weights.DEFAULT,
+    "resnet18": ResNet18_Weights.DEFAULT,
+    "resnet50": ResNet50_Weights.DEFAULT,
+    "mobilenet-v3-small": MobileNet_V3_Small_Weights.DEFAULT,
 }
 
 
 class FinetunedImageClassifier(nn.Module):
     """
-    Class FineTunedImageClassifier. 
+    Class FineTunedImageClassifier.
 
     Attributes:
         model_name (str): Identifier of the model to be used. Must be one of the keys of the MODELS/ WEIGHTS dict.
@@ -47,7 +47,8 @@ class FinetunedImageClassifier(nn.Module):
         forward (torch.Tensor) -> torch.Tensor: Forward pass of the model.
 
     """
-    MANDATORY = ['model_name', 'num_classes']
+
+    MANDATORY = ["model_name", "num_classes"]
 
     @staticmethod
     def default_config():
@@ -61,9 +62,11 @@ class FinetunedImageClassifier(nn.Module):
         pretrained = PRETRAINED
         num_classes = len(CLASSES)
 
-        return {"model_name": model_name,
-                "pretrained": pretrained,
-                "num_classes": num_classes}
+        return {
+            "model_name": model_name,
+            "pretrained": pretrained,
+            "num_classes": num_classes,
+        }
 
     def __init__(self, **kwargs):
         """
@@ -81,9 +84,12 @@ class FinetunedImageClassifier(nn.Module):
         """
         super().__init__()
         # pre conditions
-        assert len(kwargs.keys()) > 0 and all(x in kwargs.keys(
-        ) for x in FinetunedImageClassifier.MANDATORY), f"Class requires the following parameters: {FinetunedImageClassifier.MANDATORY}"
-        assert kwargs['model_name'] in MODELS, f"Choose model from {MODELS.keys()}"
+        assert len(kwargs.keys()) > 0 and all(
+            x in kwargs.keys() for x in FinetunedImageClassifier.MANDATORY
+        ), f"Class requires the following parameters: {FinetunedImageClassifier.MANDATORY}"
+        assert (
+            kwargs["model_name"] in MODELS
+        ), f"Choose model from {MODELS.keys()}"
 
         # parse mandatory kwargs
         self.model_name = kwargs["model_name"]
@@ -99,31 +105,29 @@ class FinetunedImageClassifier(nn.Module):
         self.model = MODELS[self.model_name](weights=weights)
 
         # replace last layer with linear layer with num_classes as output dimension
-        if self.model_name in ['resnet18', 'resnet50']:  # resnet family
+        if self.model_name in ["resnet18", "resnet50"]:  # resnet family
             self.model.fc = nn.Linear(
-                self.model.fc.in_features,
-                self.num_classes
+                self.model.fc.in_features, self.num_classes
             )
 
-        elif self.model_name == 'alexnet':  # alexnet
+        elif self.model_name == "alexnet":  # alexnet
             self.model.classifier[6] = nn.Linear(
-                self.model.classifier[6].in_features,
-                self.num_classes
+                self.model.classifier[6].in_features, self.num_classes
             )
 
-        elif self.model_name == 'mobilenet-v3-small':  # mobilenet
+        elif self.model_name == "mobilenet-v3-small":  # mobilenet
             self.model.classifier[3] = nn.Linear(
-                self.model.classifier[3].in_features,
-                self.num_classes
+                self.model.classifier[3].in_features, self.num_classes
             )
 
         # compute total model parameters
-        self.num_params = sum(param.numel()
-                              for param in self.model.parameters())
+        self.num_params = sum(
+            param.numel() for param in self.model.parameters()
+        )
 
         # save relevant meta information
         self.meta = kwargs
-        self.meta.update({'num_params': self.num_params})
+        self.meta.update({"num_params": self.num_params})
 
     def forward(self, inputs):
         """

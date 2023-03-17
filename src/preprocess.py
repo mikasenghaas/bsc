@@ -42,7 +42,7 @@ def main():
 
         # load metadata
         meta = load_metadata(video_path)
-        duration = int(eval(meta['duration']))
+        duration = int(eval(meta["duration"]))
 
         # meta information
         annotations = load_annotations(annotation_path)
@@ -72,19 +72,25 @@ def main():
             # extract label depending on clip time
             label = get_label(start_time, annotations)
             destination_dir = os.path.join(
-                PROCESSED_DATA_PATH, args.split, label, f"{date}_{str(clip_num).zfill(2)}")
+                PROCESSED_DATA_PATH,
+                args.split,
+                label,
+                f"{date}_{str(clip_num).zfill(2)}",
+            )
             mkdir(destination_dir)
 
             # compile ffmpeg commands
-            ffmpeg_command = f"ffmpeg " \
-                f"-loglevel error " \
-                f"-ss {start_time} " \
-                f"-y " \
-                f"-i {video_path} " \
-                f"-vf scale=224:224 " \
-                f"-t {end_time-start_time} " \
-                f"-r {FPS} " \
+            ffmpeg_command = (
+                f"ffmpeg "
+                f"-loglevel error "
+                f"-ss {start_time} "
+                f"-y "
+                f"-i {video_path} "
+                f"-vf scale=224:224 "
+                f"-t {end_time-start_time} "
+                f"-r {FPS} "
                 f"{destination_dir}/%02d.jpg"
+            )
 
             # run command
             os.system(ffmpeg_command)

@@ -26,14 +26,14 @@ class ImageDataset(Dataset):
     Parameters:
 
     split : str { train, val, test } = Samples from train, validation or test split
-    include_classes : list[str] = List of classes to include 
+    include_classes : list[str] = List of classes to include
     ratio : float = Randomly sample ratio samples within each class
     """
 
     @staticmethod
     def default_config():
         """
-        Staticmethod that contains all expected arguments for initialising a ImageDataset 
+        Staticmethod that contains all expected arguments for initialising a ImageDataset
         object. The values are taken from config.py. Use this method either on the class like
         ImageDataset.default_config()
         """
@@ -42,40 +42,57 @@ class ImageDataset(Dataset):
         include_classes: list[str] = sorted(CLASSES)
         ratio: float = RATIO
 
-        return {"split": split,
-                "include_classes": include_classes,
-                "ratio": ratio}
+        return {
+            "split": split,
+            "include_classes": include_classes,
+            "ratio": ratio,
+        }
 
     def __init__(self, **kwargs):
-        assert len(kwargs.keys()) > 0 and all(x in kwargs.keys() for x in ImageDataset.default_config().keys(
-        )), f"Class needs to be initialised with default values for 'filepath', 'split', 'include_classes' and 'ratio'."
+        assert len(kwargs.keys()) > 0 and all(
+            x in kwargs.keys() for x in ImageDataset.default_config().keys()
+        ), f"Class needs to be initialised with default values for 'filepath', 'split', 'include_classes' and 'ratio'."
 
         # save kwargs into variables
-        self.split = kwargs['split']
-        self.include_classes = kwargs['include_classes']
-        self.ratio = kwargs['ratio']
+        self.split = kwargs["split"]
+        self.include_classes = kwargs["include_classes"]
+        self.ratio = kwargs["ratio"]
         if "class2id" in kwargs:
             self.class2id = kwargs["class2id"]
         if "id2class" in kwargs:
             self.id2class = kwargs["id2class"]
 
         # pre conditions
-        assert self.split in SPLITS, "Split must be either 'train', 'val' or 'test'"
+        assert (
+            self.split in SPLITS
+        ), "Split must be either 'train', 'val' or 'test'"
         assert all(
-            x in CLASSES for x in self.include_classes), f"Only include classes from {CLASSES}"
-        assert self.ratio > 0.0 and self.ratio <= 1.0, "Ratio needs to be in ]0,1]"
+            x in CLASSES for x in self.include_classes
+        ), f"Only include classes from {CLASSES}"
+        assert (
+            self.ratio > 0.0 and self.ratio <= 1.0
+        ), "Ratio needs to be in ]0,1]"
 
         # get all image paths by class
         if self.split == "test":
-            self.images_by_class: dict[str, list[str]] = load_labelled_image_paths(
-                os.path.join(PROCESSED_DATA_PATH, "test"))
+            self.images_by_class: dict[
+                str, list[str]
+            ] = load_labelled_image_paths(
+                os.path.join(PROCESSED_DATA_PATH, "test")
+            )
         else:
-            self.images_by_class: dict[str, list[str]] = load_labelled_image_paths(
-                os.path.join(PROCESSED_DATA_PATH, "train"))
+            self.images_by_class: dict[
+                str, list[str]
+            ] = load_labelled_image_paths(
+                os.path.join(PROCESSED_DATA_PATH, "train")
+            )
 
         # subset to only include specified classes
         self.images_by_class = {
-            k: self.images_by_class[k] for k in self.include_classes if k in self.images_by_class}
+            k: self.images_by_class[k]
+            for k in self.include_classes
+            if k in self.images_by_class
+        }
 
         # randomly sample num_classes
         if self.ratio != 1.0:
@@ -85,9 +102,11 @@ class ImageDataset(Dataset):
 
         # convert to shuffled flattened list of paths
         image_paths = [
-            image_paths for image_paths in self.images_by_class.values()]
+            image_paths for image_paths in self.images_by_class.values()
+        ]
         image_paths = [
-            item for sublist in image_paths for item in sublist]  # flatten
+            item for sublist in image_paths for item in sublist
+        ]  # flatten
         random.Random(SEED).shuffle(image_paths)
 
         # subset image paths
@@ -96,14 +115,15 @@ class ImageDataset(Dataset):
             self.image_paths = image_paths
         elif self.split == "train":
             self.num_samples = int(len(image_paths) * TRAIN_RATIO)
-            self.image_paths = image_paths[:self.num_samples]
+            self.image_paths = image_paths[: self.num_samples]
         elif self.split == "val":
             self.num_samples = int(len(image_paths) * VAL_RATIO)
-            self.image_paths = image_paths[-self.num_samples:]
+            self.image_paths = image_paths[-self.num_samples :]
 
         # meta
-        self.class_distribution = {k: len(v)
-                                   for k, v in self.images_by_class.items()}
+        self.class_distribution = {
+            k: len(v) for k, v in self.images_by_class.items()
+        }
         self.classes = list(self.class_distribution.keys())
         self.num_classes = len(self.classes)
         if "class2id" not in kwargs:
@@ -113,11 +133,13 @@ class ImageDataset(Dataset):
 
         # meta information to log
         self.meta = kwargs
-        self.meta.update({
-            'class_distribution': self.class_distribution,
-            'num_samples': self.num_samples,
-            'num_classes': self.num_classes,
-        })
+        self.meta.update(
+            {
+                "class_distribution": self.class_distribution,
+                "num_samples": self.num_samples,
+                "num_classes": self.num_classes,
+            }
+        )
 
     def __getitem__(self, idx):  # [x1, ..., x10]
         image_path, label = self.image_paths[idx]

@@ -5,7 +5,7 @@ from torchvision import transforms
 from config import *
 
 
-class ImageTransformer():
+class ImageTransformer:
     """
     Class to transform images to the format required by FinetunedImageClassifier.
 
@@ -23,11 +23,13 @@ class ImageTransformer():
     """
 
     def __init__(self) -> None:
-        self.transform = transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.Lambda(self.normalise),
-            transforms.Normalize(MEAN, STD, inplace=True)
-        ])  # pyright: ignore
+        self.transform = transforms.Compose(
+            [
+                transforms.Resize((224, 224)),
+                transforms.Lambda(self.normalise),
+                transforms.Normalize(MEAN, STD, inplace=True),
+            ]
+        )  # pyright: ignore
 
     def normalise(self, tensor: torch.Tensor) -> torch.Tensor:
         return tensor.float() / 255.0

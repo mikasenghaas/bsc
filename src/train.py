@@ -17,7 +17,16 @@ from transform import ImageTransformer
 from utils import *
 
 
-def train(model: nn.Module, transform: ImageTransformer, train_loader: DataLoader, val_loader: DataLoader, criterion: nn.Module, optim: torch.optim, scheduler: torch.optim.lr_scheduler, args: argparse.Namespace):
+def train(
+    model: nn.Module,
+    transform: ImageTransformer,
+    train_loader: DataLoader,
+    val_loader: DataLoader,
+    criterion: nn.Module,
+    optim: torch.optim,
+    scheduler: torch.optim.lr_scheduler,
+    args: argparse.Namespace,
+):
     """
     Train a model on a given dataset given a data transformer class, loader classes for a training
     and validation split, an criterion, optimizer and learning rate scheduler.
@@ -35,7 +44,8 @@ def train(model: nn.Module, transform: ImageTransformer, train_loader: DataLoade
     # set progress bar with max epochs
     pbar = tqdm(range(args.max_epochs))
     pbar.set_description(
-        f'XXX/XX (XX.Xms/ XX.Xms) - Train: X.XXX (XX.X%) - Val: X.XXX (XX.X%)')
+        f"XXX/XX (XX.Xms/ XX.Xms) - Train: X.XXX (XX.X%) - Val: X.XXX (XX.X%)"
+    )
 
     # initialise training metrics
     train_loss, val_loss = 0.0, 0.0
@@ -91,15 +101,20 @@ def train(model: nn.Module, transform: ImageTransformer, train_loader: DataLoade
             train_acc = running_correct / samples_seen
             train_loss = running_loss / samples_seen
 
-            pbar.set_description(f'{str(epoch).zfill(len(str(args.max_epochs)))}/{str(batch_num).zfill(len(str(len(train_loader))))} ({round(running_training_time / samples_seen * 1000, 1)}ms | {round(running_inference_time / samples_seen * 1000, 1)}ms) - Train: {train_loss:.3f} ({(train_acc * 100):.1f}%) - Val: {val_loss:.3f} ({(val_acc * 100):.1f}%)')
+            pbar.set_description(
+                f"{str(epoch).zfill(len(str(args.max_epochs)))}/{str(batch_num).zfill(len(str(len(train_loader))))} ({round(running_training_time / samples_seen * 1000, 1)}ms | {round(running_inference_time / samples_seen * 1000, 1)}ms) - Train: {train_loss:.3f} ({(train_acc * 100):.1f}%) - Val: {val_loss:.3f} ({(val_acc * 100):.1f}%)"
+            )
 
             # log epoch metrics for train and val split
             if args.wandb_log:
-                wandb.log({
-                    'training_accuracy': train_acc,
-                    'validation_accuracy': val_acc,
-                    'training_loss': train_loss,
-                    'validation_loss': val_loss})
+                wandb.log(
+                    {
+                        "training_accuracy": train_acc,
+                        "validation_accuracy": val_acc,
+                        "training_loss": train_loss,
+                        "validation_loss": val_loss,
+                    }
+                )
 
         training_times.append(running_training_time)
         inference_times.append(running_inference_time)
@@ -130,23 +145,30 @@ def train(model: nn.Module, transform: ImageTransformer, train_loader: DataLoade
             val_acc = running_correct / len(val_loader.dataset)
 
             pbar.set_description(
-                f'{str(epoch).zfill(len(str(args.max_epochs)))}/00 - Train: {train_loss:.3f} ({(train_acc * 100):.1f}%) - Val: {val_loss:.3f} ({(val_acc * 100):.1f}%)')
+                f"{str(epoch).zfill(len(str(args.max_epochs)))}/00 - Train: {train_loss:.3f} ({(train_acc * 100):.1f}%) - Val: {val_loss:.3f} ({(val_acc * 100):.1f}%)"
+            )
 
         # adjust learning rate
         scheduler.step()
 
     # log average training step time/ sample + inference time/ sample
     if args.wandb_log:
-        wandb.config.update({
-            "training_time_per_sample_ms": round(sum(training_times) / len(training_times), 1),
-            "inference_time_per_sample_ms": round(sum(inference_times) / len(inference_times), 1)
-        })
+        wandb.config.update(
+            {
+                "training_time_per_sample_ms": round(
+                    sum(training_times) / len(training_times), 1
+                ),
+                "inference_time_per_sample_ms": round(
+                    sum(inference_times) / len(inference_times), 1
+                ),
+            }
+        )
 
     return model
 
 
 def main():
-    """ Main function of src/train.py """
+    """Main function of src/train.py"""
     start_timer = start_task("Running train.py", get_timer=True)
 
     # parse cli arguments
@@ -159,7 +181,8 @@ def main():
             group=args.wandb_group if args.wandb_group else None,
             name=args.wandb_name if args.wandb_name else None,
             tags=args.wandb_tags if args.wandb_tags else None,
-            config=vars(args))
+            config=vars(args),
+        )
 
         wandb.define_metric("training_loss", summary="min")
         wandb.define_metric("validation_loss", summary="min")
@@ -170,15 +193,24 @@ def main():
     start_task("Initialising Data and Model")
 
     # initialise train and validation split
-    data = {split: ImageDataset(split=split, include_classes=args.include_classes,
-                                ratio=args.ratio) for split in ["train", "val"]}
+    data = {
+        split: ImageDataset(
+            split=split, include_classes=args.include_classes, ratio=args.ratio
+        )
+        for split in ["train", "val"]
+    }
 
     # extract class2id and id2class mappings from train split
     id2class, class2id = data["train"].id2class, data["train"].class2id
 
     # initialise test split with mappings
-    data["test"] = ImageDataset(split="test", include_classes=args.include_classes,
-                                ratio=args.ratio, class2id=class2id, id2class=id2class)
+    data["test"] = ImageDataset(
+        split="test",
+        include_classes=args.include_classes,
+        ratio=args.ratio,
+        class2id=class2id,
+        id2class=id2class,
+    )
 
     # initialise transforms
     transform = ImageTransformer()
@@ -189,30 +221,41 @@ def main():
         num_classes=len(args.include_classes),
         pretrained=args.pretrained,
         id2class=id2class,
-        class2id=class2id)
+        class2id=class2id,
+    )
 
     # initialise data loader
-    loader = {split: DataLoader(
-        data[split], batch_size=args.batch_size) for split in SPLITS}
+    loader = {
+        split: DataLoader(data[split], batch_size=args.batch_size)
+        for split in SPLITS
+    }
 
     # define loss, optimiser and lr scheduler
     criterion = nn.CrossEntropyLoss()  # pyright: ignore
     optim = torch.optim.Adam(model.parameters(), lr=args.lr)
     scheduler = torch.optim.lr_scheduler.StepLR(
-        optim, args.step_size, args.gamma)
+        optim, args.step_size, args.gamma
+    )
 
     # train model
     start_task("Starting Training")
     print(get_summary(vars(args)))
     trained_model = train(
-        model, transform, loader['train'], loader['val'], criterion, optim, scheduler, args)
+        model,
+        transform,
+        loader["train"],
+        loader["val"],
+        criterion,
+        optim,
+        scheduler,
+        args,
+    )
 
     # prepare trained model for saving
-    trained_model.to('cpu')
+    trained_model.to("cpu")
     trained_model.eval()
 
     if args.wandb_log:
-
         # prepare artifact saving
         filepath = os.path.join(MODEL_PATH, args.model)
         mkdir(filepath)
@@ -221,18 +264,23 @@ def main():
         start_task(f"Optimising Model for Mobile")
         torchscript_model = torch.jit.script(trained_model)  # type: ignore
         optimised_torchscript_model = optimize_for_mobile(
-            torchscript_model)  # type: ignore
+            torchscript_model
+        )  # type: ignore
 
         # save transforms and model
         start_task(f"Saving Artifacts to {filepath}")
         save_pickle(transform, os.path.join(filepath, f"transforms.pkl"))
         save_json(trained_model.meta, os.path.join(filepath, f"config.json"))
-        torch.save(trained_model.state_dict(),
-                   os.path.join(filepath, f"{args.model}.pt"))
-        optimised_torchscript_model.save(os.path.join(
-            filepath, f"{args.model}.pth"))  # type: ignore
+        torch.save(
+            trained_model.state_dict(),
+            os.path.join(filepath, f"{args.model}.pt"),
+        )
+        optimised_torchscript_model.save(
+            os.path.join(filepath, f"{args.model}.pth")
+        )  # type: ignore
         optimised_torchscript_model._save_for_lite_interpreter(
-            os.path.join(filepath, f"{args.model}.ptl"))  # type: ignore
+            os.path.join(filepath, f"{args.model}.ptl")
+        )  # type: ignore
 
         # save as artifact to wandb
         start_task("Saving Artifcats to WANDB")
@@ -262,7 +310,7 @@ def main():
 
         # compute mispredicted images
         mispredictions = []
-        for batch_num, (images, _) in enumerate(loader['test']):
+        for batch_num, (images, _) in enumerate(loader["test"]):
             for i, image in enumerate(images):
                 idx = batch_num * i + i
                 true, pred = y_true[idx], y_pred[idx]  # pyright: ignore
@@ -274,10 +322,10 @@ def main():
                     mispredictions.append(wandb_img)
 
         # save evaluation visualisations to wandb
-        wandb.log({'mispredictions': mispredictions})
+        wandb.log({"mispredictions": mispredictions})
 
     end_task("Training Done", start_timer)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

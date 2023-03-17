@@ -27,9 +27,11 @@ def main():
     start_task(f"Loading {args.model}:{args.version}")
     api = wandb.Api()
     artifact = api.artifact(
-        f'mikasenghaas/bsc/{args.model}:{args.version}', type='model')  # pyright: ignore
-    filepath = os.path.join(BASEPATH, "artifacts",
-                            f"{args.model}:{args.version}")
+        f"mikasenghaas/bsc/{args.model}:{args.version}", type="model"
+    )  # pyright: ignore
+    filepath = os.path.join(
+        BASEPATH, "artifacts", f"{args.model}:{args.version}"
+    )
     if not os.path.exists(filepath):
         artifact.download(root=filepath)
 
@@ -62,7 +64,8 @@ def main():
     else:
         # specific video path in split
         video_path = os.path.join(
-            RAW_DATA_PATH, args.split, args.clip, "video.mov")
+            RAW_DATA_PATH, args.split, args.clip, "video.mov"
+        )
 
     if args.gradcam:
         if args.model == "resnet18":
@@ -78,13 +81,18 @@ def main():
     start_task(f"Starting Inference on {'/'.join(video_path.split('/')[-3:])}")
     while True:
         # read next frame
-        _, frame = cap.read()  # np.ndarray, (H=1920, W=1080, C=3), dtype=np.uint8
+        (
+            _,
+            frame,
+        ) = cap.read()  # np.ndarray, (H=1920, W=1080, C=3), dtype=np.uint8
         frame_tensor = torch.tensor(frame).permute(
-            2, 0, 1)  # torch.tensor, (C, H, W)
+            2, 0, 1
+        )  # torch.tensor, (C, H, W)
         # change channel to RGB from BGR
         frame_tensor = frame_tensor[[2, 1, 0], :, :]
-        transformed_tensor = transform(
-            frame_tensor).unsqueeze(0)  # transform tensor
+        transformed_tensor = transform(frame_tensor).unsqueeze(
+            0
+        )  # transform tensor
 
         if frame_tensor == None:
             break
@@ -101,25 +109,28 @@ def main():
             # type: ignore np.ndarray, (224, 224), dtype=np.uint8
             gradcam = cam(transformed_tensor).squeeze()
             gradcam = cv2.resize(
-                gradcam, (frame.shape[1], frame.shape[0]))  # type: ignore
+                gradcam, (frame.shape[1], frame.shape[0])
+            )  # type: ignore
 
             # np.ndarray, (1920, 1080, 3), dtype=np.float32
             normalised_frame = frame.astype(np.float32) / 255.0
 
             frame = show_cam_on_image(
-                normalised_frame, gradcam, image_weight=0.7)
+                normalised_frame, gradcam, image_weight=0.7
+            )
 
         text = f"{class_label} ({round(100 * prob, 1)}%)"
 
         # overlay the prediction on the frame
-        cv2.putText(frame, text, (10, 50), cv2.FONT_HERSHEY_SIMPLEX,
-                    1.2, (0, 255, 0), 1)  # type: ignore
+        cv2.putText(
+            frame, text, (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 1
+        )  # type: ignore
 
         # display the frame with the prediction overlaid
         cv2.imshow(f"{args.model}:{args.version}", frame)  # type: ignore
 
         # exit the loop if the 'q' key is pressed
-        if cv2.waitKey(1) & 0xFF == ord('q'):  # type: ignore
+        if cv2.waitKey(1) & 0xFF == ord("q"):  # type: ignore
             break
 
     # release the video capture and close window

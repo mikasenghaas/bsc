@@ -1,6 +1,8 @@
 {
+  "python.formatting.provider": "black",
+  "python.formatting.blackArgs": ["--line-length 80"],
   "[python]": {
-    "editor.defaultFormatter": "ms-python.autopep8",
+    "editor.formatOnPaste": true,
     "editor.formatOnSave": true
   },
 }
