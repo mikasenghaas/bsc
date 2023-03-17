@@ -1,8 +1,10 @@
+autopep8
 ffmpeg
 grad-cam
 numpy
 opencv-python
 pandas
+pydocstyle
 scikit-learn
 seaborn
 termcolor
