@@ -1,5 +1,8 @@
-# utils.py
-#  by: mika senghaas
+"""
+Module for utility functions.
+
+Author: Mika Senghaas
+"""
 
 import argparse
 import datetime
@@ -9,6 +12,7 @@ import os
 import pickle
 import json
 import timeit
+from typing import Any
 
 import ffmpeg
 from matplotlib import pyplot as plt
@@ -17,65 +21,199 @@ import numpy as np
 import pandas as pd
 from termcolor import colored
 import torch
-from torch.nn.functional import softmax
 from torchvision import transforms
 
 from config import *
 from utils import *
 
-def add_general_args(group):
-    group.add_argument("--device", type=str, choices=["cpu", "cuda", "mps"], default=DEVICE, help="Training Device")
 
-def add_wandb_args(group):
-    group.add_argument("--wandb-log", action=argparse.BooleanOptionalAction, default=LOG, help="Log to WANDB")
-    group.add_argument("--wandb-name", type=str, default="", help="Experiment Group (WANDB)")
-    group.add_argument("--wandb-group", type=str, default="", help="Experiment Group (WANDB)")
-    group.add_argument("--wandb-tags", nargs="+", default=[], help="Experiment Tags (WANDB)")
+def add_general_args(group: argparse._ArgumentGroup) -> None:
+    """
+    Add general arguments to argparse group.
+
+    Args:
+        group (argparse._ArgumentGroup): Argument group to add arguments to
+    """
+    group.add_argument(
+        "--device",
+        type=str,
+        choices=[
+            "cpu",
+            "cuda",
+            "mps"],
+        default=DEVICE,
+        help="Training Device")
+
+
+def add_wandb_args(group: argparse._ArgumentGroup) -> None:
+    """
+    Add W&B arguments to argparse group.
+
+    Args:
+        group (argparse._ArgumentGroup): Argument group to add arguments to
+    """
+    group.add_argument(
+        "--wandb-log",
+        action=argparse.BooleanOptionalAction,
+        default=LOG,
+        help="Log to WANDB")
+    group.add_argument(
+        "--wandb-name",
+        type=str,
+        default="",
+        help="Experiment Group (WANDB)")
+    group.add_argument(
+        "--wandb-group",
+        type=str,
+        default="",
+        help="Experiment Group (WANDB)")
+    group.add_argument(
+        "--wandb-tags",
+        nargs="+",
+        default=[],
+        help="Experiment Tags (WANDB)")
+
 
 def add_data_args(group):
-    group.add_argument("--include-classes", nargs="+", default=[], help=f"List of classes to include in training") # TODO
-    group.add_argument("--all-classes", action=argparse.BooleanOptionalAction, default=False, help="Adds all classes in category 'Ground Floor' to training")
-    group.add_argument("--ground-floor", action=argparse.BooleanOptionalAction, default=False, help="Adds all classes in category 'Ground Floor' to training")
-    group.add_argument("--first-floor", action=argparse.BooleanOptionalAction, default=False, help="Adds all classes in category 'First Floor' to training")
-    group.add_argument("--ratio", type=float, default=RATIO, help="Randomly sample a ratio of samples in every class")
+    """
+    Add arguments for dataset to argparse group.
+
+    Args:
+        group (argparse._ArgumentGroup): Argument group to add arguments to
+    """
+    group.add_argument(
+        "--include-classes",
+        nargs="+",
+        default=[],
+        help=f"List of classes to include in training")
+    group.add_argument(
+        "--all-classes",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Adds all classes in category 'Ground Floor' to training")
+    group.add_argument(
+        "--ground-floor",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Adds all classes in category 'Ground Floor' to training")
+    group.add_argument(
+        "--first-floor",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Adds all classes in category 'First Floor' to training")
+    group.add_argument(
+        "--ratio",
+        type=float,
+        default=RATIO,
+        help="Randomly sample a ratio of samples in every class")
+
 
 def add_model_args(group):
-    group.add_argument("-M", "--model", type=str, help="Model Identifier", required=True)
-    group.add_argument("-V", "--version", type=str, default="latest", help="Model Version. Either 'latest' or 'vX'")
-    group.add_argument("--pretrained", action=argparse.BooleanOptionalAction, default=PRETRAINED, help="Finetune pre-trained model")
+    """
+    Add arguments for model to argparse group.
+
+    Args:
+        group (argparse._ArgumentGroup): Argument group to add arguments to
+    """
+    group.add_argument(
+        "-M",
+        "--model",
+        type=str,
+        help="Model Identifier",
+        required=True)
+    group.add_argument(
+        "-V",
+        "--version",
+        type=str,
+        default="latest",
+        help="Model Version. Either 'latest' or 'vX'")
+    group.add_argument(
+        "--pretrained",
+        action=argparse.BooleanOptionalAction,
+        default=PRETRAINED,
+        help="Finetune pre-trained model")
+
 
 def load_preprocess_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
+    """
+    Return parsed arguments for script preprocess.py.
+
+    Returns:
+        argparse.Namespace: Parsed arguments
+    """
+    parser = argparse.ArgumentParser()  # create parser
 
     # preprocess args
-    parser.add_argument("--split", choices=["train", "test"], default="train", help="Which split to extract clips from")
-    parser.add_argument("--max-length", type=int, default=MAX_LENGTH, help="Maximum number of frames per extracted clip")
-    parser.add_argument("--fps", type=int, default=FPS, help="Number of frames per second (FPS) to extract")
+    parser.add_argument(
+        "--split",
+        choices=[
+            "train",
+            "test"],
+        default="train",
+        help="Which split to extract clips from")
+    parser.add_argument(
+        "--max-length",
+        type=int,
+        default=MAX_LENGTH,
+        help="Maximum number of frames per extracted clip")
+    parser.add_argument(
+        "--fps",
+        type=int,
+        default=FPS,
+        help="Number of frames per second (FPS) to extract")
 
     args = parser.parse_args()
     return args
 
-def load_train_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
 
-    # data and model args
+def load_train_args() -> argparse.Namespace:
+    """
+    Return parsed arguments for script train.py.
+
+    Returns:
+        argparse.Namespace: Parsed arguments
+    """
+    parser = argparse.ArgumentParser()  # create parser
+
+    # create general, model, data and wandb args
     general_group = parser.add_argument_group(title="General Arguments")
     model_group = parser.add_argument_group(title="Model Arguments")
     data_group = parser.add_argument_group(title="Data Arguments")
     wandb_group = parser.add_argument_group(title="W&B Arguments")
 
+    # add args to each group
     add_model_args(model_group)
     add_data_args(data_group)
     add_general_args(general_group)
     add_wandb_args(wandb_group)
 
-    # args only for training
+    # add training args
     train_group = parser.add_argument_group(title="Training Arguments")
-    train_group.add_argument("--max-epochs", type=int, default=MAX_EPOCHS, help="Maximum Epochs")
-    train_group.add_argument("--batch-size", type=int, default=BATCH_SIZE, help="Batch Size in Training and Validation Loader")
-    train_group.add_argument("--lr", type=float, default=LR, help="Learning Rate for Optimiser")
-    train_group.add_argument("--step-size", type=int, default=STEP_SIZE, help="Step Size for Scheduler")
-    train_group.add_argument("--gamma", type=float, default=GAMMA, help="Gamma for Scheduler")
+    train_group.add_argument(
+        "--max-epochs",
+        type=int,
+        default=MAX_EPOCHS,
+        help="Maximum Epochs")
+    train_group.add_argument(
+        "--batch-size",
+        type=int,
+        default=BATCH_SIZE,
+        help="Batch Size in Training and Validation Loader")
+    train_group.add_argument(
+        "--lr",
+        type=float,
+        default=LR,
+        help="Learning Rate for Optimiser")
+    train_group.add_argument(
+        "--step-size",
+        type=int,
+        default=STEP_SIZE,
+        help="Step Size for Scheduler")
+    train_group.add_argument(
+        "--gamma",
+        type=float,
+        default=GAMMA,
+        help="Gamma for Scheduler")
 
     # parse args
     args = parser.parse_args()
@@ -99,7 +237,14 @@ def load_train_args() -> argparse.Namespace:
 
     return args
 
+
 def load_infer_args() -> argparse.Namespace:
+    """
+    Return parsed arguments for script infer.py.
+
+    Returns:
+        argparse.Namespace: Parsed arguments
+    """
     parser = argparse.ArgumentParser()
 
     # model and general args
@@ -111,19 +256,43 @@ def load_infer_args() -> argparse.Namespace:
 
     # infer args
     infer_group = parser.add_argument_group(title="Inference Arguments")
-    infer_group.add_argument("--gradcam", action=argparse.BooleanOptionalAction, default=False, help="Whether to run and overlay GradCam during inference")
-    infer_group.add_argument("--split", choices=SPLITS, default="test", help="From where to get the clip from")
-    infer_group.add_argument("--clip", type=str, default=None, help="Which clip to sample")
+    infer_group.add_argument(
+        "--gradcam",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Whether to run and overlay GradCam during inference")
+    infer_group.add_argument(
+        "--split",
+        choices=SPLITS,
+        default="test",
+        help="From where to get the clip from")
+    infer_group.add_argument(
+        "--clip",
+        type=str,
+        default=None,
+        help="Which clip to sample")
 
     # parse args
     args = parser.parse_args()
 
-    if args.clip != None:
-        assert args.clip in os.listdir(os.path.join(RAW_DATA_PATH, args.split)), f"{args.clip} must be in {os.path.join(RAW_DATA_PATH, args.split)}"
+    if args.clip is not None:
+        assert args.clip in os.listdir(
+            os.path.join(
+                RAW_DATA_PATH, args.split)), f"{args.clip} must be in {os.path.join(RAW_DATA_PATH, args.split)}"
 
     return args
 
+
 def mkdir(filepath: str) -> bool:
+    """
+    Create a directory filepath if it does not exist.
+
+    Args:
+        filepath (str): Path to directory
+
+    Returns:
+        bool: True if directory was created, False if it already exists
+    """
     if filepath.find('.') >= 0:
         filepath = '/'.join(filepath.split('/')[:-1])
     if not os.path.exists(filepath):
@@ -131,111 +300,300 @@ def mkdir(filepath: str) -> bool:
         return True
     return False
 
+
 def start_task(task: str, get_timer: bool = False) -> float | None:
+    """
+    Print a colored task to the console; Optionally returns which can be passed to end_tast, otherwise None.
+
+    Args:
+        task (str): Task to print
+        get_timer (bool, optional): Whether to return a timer. Defaults to False.
+
+    Returns:
+        float | None: Timer if get_timer is True, otherwise None
+    """
     print(colored(f"> {task}", "green"))
     return timeit.default_timer() if get_timer else None
 
-def end_task(task: str, start_time : float | None = None) -> None:
+
+def end_task(task: str, start_time: float | None = None) -> None:
+    """
+    Print colored task signalling that the task has finishedk; Optionally takes a timer generated by start_task to print the time taken for the task.
+
+    Args:
+        task (str): Task to print
+        start_time (float | None, optional): Timer generated by start_task. Defaults to None.
+
+    Returns:
+        None
+    """
     if start_time:
-        print(colored(f"> Finished {task} in {datetime.timedelta(seconds=int(timeit.default_timer() - start_time))}", "green"))
+        print(
+            colored(
+                f"> Finished {task} in {datetime.timedelta(seconds=int(timeit.default_timer() - start_time))}",
+                "green"))
     else:
         print(colored(f"> Finished {task}", "green"))
 
+
 def load_metadata(filepath: str) -> dict:
+    """
+    Load metadata from a video file.
+
+    Args:
+        filepath (str): Path to video file
+
+    Returns:
+        dict: Metadata of video file
+    """
     meta = ffmpeg.probe(filepath).get('format')
     return meta
 
-def load_annotations(filepath : str):
-    targets  = []
+
+def load_annotations(filepath: str) -> list[tuple[str, str]]:
+    """
+    Load annotations from a csv file. Goes through each line and splits it into a tuple of (timestamp, label) and appends to a list of tuples.
+
+    Args:
+        filepath (str): Path to csv file
+
+    Returns:
+        list[tuple[str, str]]: List of tuples of (timestamp, label)
+    """
+    targets = []
     with open(filepath, "r") as file:
         for line in file:
             timestamp, label = line.strip().split(',')
             targets.append((timestamp, label))
 
-    return targets # type: ignore
+    return targets  # type: ignore
 
-def normalise_image(image_tensor : torch.Tensor) -> torch.Tensor:
+
+def normalise_image(image_tensor: torch.Tensor) -> torch.Tensor:
+    """
+    Normalise an image tensor with the mean and standard deviation of the ImageNet dataset.
+
+    Args:
+        image_tensor (torch.Tensor): Image tensor to normalise
+
+    Returns:
+        torch.Tensor: Normalised image tensor
+    """
     return (image_tensor - MEAN[:, None, None]) / STD[:, None, None]
 
-def unnormalise_image(image_tensor : torch.Tensor) -> torch.Tensor:
+
+def unnormalise_image(image_tensor: torch.Tensor) -> torch.Tensor:
+    """
+    Unnormalise an image tensor with the mean and standard deviation of the ImageNet dataset.
+
+    Args:
+        image_tensor (torch.Tensor): Image tensor to unnormalise
+
+    Returns:
+        torch.Tensor: Unnormalised image tensor
+    """
     return (image_tensor * STD[:, None, None] + MEAN[:, None, None])
 
-def get_summary(args: dict):
+
+def get_summary(args: dict) -> pd.Series:
+    """
+    Return a summary of the arguments as a pandas Series given a dictionary of arguments.
+
+    Args:
+        args (dict): Dictionary of arguments
+
+    Returns:
+        pd.Series: Summary of arguments
+    """
     return pd.Series(args)
 
-def show_image(image_tensor : torch.Tensor, title : str | None= None, unnormalise : bool = False, ax : plt.Axes = None, show : bool = False):
-    assert image_tensor.ndim == 3, "Number of dimension must be 3"
-    assert image_tensor.shape[0] == 3 , "Expects tensor of shape [C, H, W]"
 
-    if ax==None:
-        _, ax = plt.subplots() # pyright: ignore
-    if unnormalise: 
+def show_image(image_tensor: torch.Tensor, title: str | None = None,
+               unnormalise: bool = False, ax: plt.Axes = None, show: bool = False) -> None:
+    """
+    Display an image tensor using matplotlib. Can take unnormalised image tensor with unnormalise=False or normalised image tensor with unnormalise=True.
+
+    Optionally can be given a custom title. If ax is not None, the image will be displayed on the given axis, otherwise a new axis will be created.
+    The image will be displayed if show=True, otherwise it will not be displayed.
+
+    Args:
+        image_tensor (torch.Tensor): Image tensor [C, H, W] to display
+        title (str | None, optional): Title of the image. Defaults to None.
+        unnormlaise (bool, optional): Whether the image tensor is normalised or not. Defaults to False.
+        ax (plt.Axes, optional): Axis to display the image on. Defaults to None.
+        show (bool, optional): Whether to display the image. Defaults to False.
+
+    Returns:
+        None
+    """
+    assert image_tensor.ndim == 3, "Number of dimension must be 3"
+    assert image_tensor.shape[0] == 3, "Expects tensor of shape [C, H, W]"
+
+    if ax is None:
+        _, ax = plt.subplots()  # pyright: ignore
+    if unnormalise:
         image_tensor = unnormalise_image(image_tensor)
     image_tensor = transforms.ToPILImage()(image_tensor.to('cpu'))
     ax.imshow(image_tensor)
     ax.set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
-    if title != None:
+    if title is not None:
         ax.set_title(title)
     if show:
         plt.show()
 
-def show_images(image_tensors : torch.Tensor, titles : list[str] | None= None, unnormalise : bool = False, ax : plt.Axes = None, show : bool = False):
+
+def show_images(image_tensors: torch.Tensor,
+                titles: list[str] | None = None, unnormalise: bool = False, ax: plt.Axes = None):
+    """
+    Display a grid of image tensors using matplotlib by utilising the show_image function.
+
+    Can take unnormalised image tensor with unnormalise=False or normalised image tensor with unnormalise=True.
+    Grid of images is shown by default.
+    """
     assert image_tensors.ndim == 4, "Number of dimension must be 3"
-    assert image_tensors.shape[1] == 3 , "Expects tensor of shape [F, C, H, W]"
+    assert image_tensors.shape[1] == 3, "Expects tensor of shape [F, C, H, W]"
 
     n = len(image_tensors)
     dim = int(math.sqrt(n))
-    fig, ax = plt.subplots(figsize=(16,16), ncols=dim, nrows=dim) # pyright: ignore
-    if titles == None:
+    fig, ax = plt.subplots(figsize=(16, 16), ncols=dim,
+                           nrows=dim)  # pyright: ignore
+    if titles is None:
         titles = ["Unnamed Video Frame"] * n
     for i in range(dim):
         for j in range(dim):
-            idx = i*(dim) + j
-            show_image(image_tensors[idx], title=titles[idx], unnormalise=unnormalise, ax=ax[i, j]) # pyright: ignore
+            idx = i * (dim) + j
+            show_image(image_tensors[idx],
+                       title=titles[idx],
+                       unnormalise=unnormalise,
+                       ax=ax[i,
+                             j])  # pyright: ignore
     plt.show()
 
-def show_video(video_tensor : torch.Tensor, title: str | None = None, unnormalise : bool = True, interval : int = 500):
+
+def show_video(video_tensor: torch.Tensor, title: str |
+               None = None, unnormalise: bool = True) -> None:
+    """
+    Display a video tensor using matplotlib's animation module. Can take unnormalised video tensor with unnormalise=False or normalised video tensor with unnormalise=True.
+
+    Args:
+        video_tensor (torch.Tensor): Video tensor [T, C, H, W] to display
+        title (str | None, optional): Title of the video. Defaults to None.
+        unnormalise (bool, optional): Whether the video tensor is normalised or not. Defaults to True.
+
+    Returns:
+        None
+    """
     assert video_tensor.ndim == 4, "Number of dimension must be 4"
-    assert video_tensor.shape[1] == 3 , "Expects tensor of shape [T, C, H, W]"
+    assert video_tensor.shape[1] == 3, "Expects tensor of shape [T, C, H, W]"
 
     if unnormalise:
-        video_tensor = torch.cat([unnormalise_image(frame).unsqueeze(0) for frame in video_tensor])
+        video_tensor = torch.cat(
+            [unnormalise_image(frame).unsqueeze(0) for frame in video_tensor])
 
     # Display the gif using matplotlib's animation module
     fig, ax = plt.subplots()
-    ax.set_title(title) # type: ignore
-    ax.set_xticks([]) # type: ignore
-    ax.set_yticks([]) # type: ignore
+    ax.set_title(title)  # type: ignore
+    ax.set_xticks([])  # type: ignore
+    ax.set_yticks([])  # type: ignore
 
-    im = ax.imshow(transforms.ToPILImage()(video_tensor[0])) # type: ignore
+    im = ax.imshow(transforms.ToPILImage()(video_tensor[0]))  # type: ignore
 
     def animate(i):
         im.set_array(transforms.ToPILImage()(video_tensor[i]))
         return [im]
 
-    a = animation.FuncAnimation(fig, animate, frames=len(video_tensor), interval=interval, blit=True)
+    a = animation.FuncAnimation(
+        fig,
+        animate,
+        frames=len(video_tensor),
+        interval=1,
+        blit=True)
     plt.show()
 
-def timestamp_to_second(timestamp : str) -> int:
-  mm, ss = map(int, timestamp.split(':'))
-  return mm * 60 + ss
+
+def timestamp_to_second(timestamp: str) -> int:
+    """
+    Convert a timestamp in the format mm:ss to seconds.
+
+    Args:
+        timestamp (str): Timestamp in the format mm:ss
+
+    Returns:
+        int: Timestamp in seconds
+    """
+    mm, ss = map(int, timestamp.split(':'))
+    return mm * 60 + ss
+
 
 def get_label(second_in_video: int, annotations: list[tuple[str, str]]) -> str:
-  # assumes targets is sorted by timestamp
-  prev_label = annotations[0][1]
-  for i in range(1, len(annotations)):
-    timestamp, label = annotations[i]
-    seconds = timestamp_to_second(timestamp)
-    if second_in_video < seconds:
-      return prev_label
-    prev_label = label
+    """
+    Extract the location label of a video given the second in the video and the annotations. Assumes annotations are sorted by timestamp.
 
-  return annotations[-1][1]
+    Args:
+        second_in_video (int): Second in the video
+        annotations (list[tuple[str, str]]): List of tuples of the form (timestamp, label)
+
+    Returns:
+        str: Location label
+    """
+    # set first label as default
+    prev_label = annotations[0][1]
+    # iterate over all other annotations (index position 1 to end)
+    for i in range(1, len(annotations)):
+        # extract timestamp and label from current annotation
+        timestamp, label = annotations[i]
+
+        # convert timestamp to seconds
+        seconds = timestamp_to_second(timestamp)
+
+        # if second in video is less than the current timestamp, return the
+        # previous label
+        if second_in_video < seconds:
+            return prev_label
+
+        # otherwise, set the current label as the previous label
+        prev_label = label
+
+    # if second in video is greater than all timestamps, return the last label
+    return annotations[-1][1]
+
 
 def load_labels(filepath: str) -> list[str]:
-    return sorted(os.listdir(filepath))
+    """
+    Load the labels, which are the directory names within a given filepath.
 
-def load_labelled_image_paths(filepath: str):
+    Args:
+        filepath (str): Path to the directory containing the labelled images
+
+    Returns:
+        list: List of labels
+    """
+    return sorted([path for path in os.listdir(
+        filepath) if not path.startswith('.')])
+
+
+def load_labelled_image_paths(
+        filepath: str) -> dict[str, list[tuple[str, str]]]:
+    """
+    Load the labelled image paths from a given filepath.
+
+    Assumes the following directory structure:
+    filepath
+    ├── label1
+    │   ├── image1.jpg
+    │   ├── image2.jpg
+    │   └── ...
+    ├── label2
+    │   ├── image1.jpg
+    │   └── ...
+    └── ...
+
+    Args:
+        filepath (str): Path to the directory containing the labelled images
+
+    Returns:
+        dict: Dictionary of the form {label: [(image_path, label), ...], ...}
+    """
     labelled_image_paths = {}
 
     for label_paths in glob.glob(os.path.join(filepath, "*")):
@@ -246,52 +604,60 @@ def load_labelled_image_paths(filepath: str):
 
     return labelled_image_paths
 
-def load_labeled_video_paths(filepath: str):
-    labelled_video_paths = []
 
-    for label_paths in glob.glob(os.path.join(filepath, "*")):
-        for path in glob.glob(os.path.join(label_paths, "*")):
-            labelled_video_paths.append((path, label_paths.split('/')[-1]))
-  
-    return labelled_video_paths
+def save_pickle(obj: Any, filepath: str) -> None:
+    """
+    Save a pickle file to the given filepath.
 
-def save_pickle(obj, filepath: str):
+    Args:
+        obj (Any): Object to be pickled
+        filepath (str): Path to save the pickle file
+
+    Returns:
+        None
+    """
     with open(filepath, "wb") as f:
         pickle.dump(obj, f)
 
-def load_pickle(filepath: str):
+
+def load_pickle(filepath: str) -> Any:
+    """
+    Load a pickle file from the given filepath.
+
+    Args:
+        filepath (str): Path to load the pickle file
+
+    Returns:
+        Any: Object loaded from the pickle file
+    """
     with open(filepath, "rb") as f:
         return pickle.load(f)
 
-def save_json(obj, filepath: str):
+
+def save_json(obj: Any, filepath: str) -> None:
+    """
+    Save a json file to the given filepath.
+
+    Args:
+        obj (Any): Object to be saved
+        filepath (str): Path to save the json file
+
+    Returns:
+        None
+    """
     with open(filepath, "w") as f:
         json.dump(obj, f, indent=4, sort_keys=True)
 
-def load_json(filepath: str):
+
+def load_json(filepath: str) -> Any:
+    """
+    Load a json file from the given filepath.
+
+    Args:
+        filepath (str): Path to load the json file
+
+    Returns:
+        Any: Object loaded from the json file
+    """
     with open(filepath, "r") as f:
         return json.load(f)
-
-def get_predictions(model, transforms, loader):
-    # load and predict on test split
-    model.to(DEVICE)
-    model.eval()
-    y_true, y_pred, y_probs = None, None, None
-    for batch_num, (inputs, labels) in enumerate(loader):
-        inputs = inputs.to(DEVICE)
-        labels = labels.to(DEVICE)
-
-        # predict test samples
-        logits = model(transforms(inputs))
-        probs = softmax(logits, 1).detach() # B, 7
-        preds = logits.argmax(-1)
-
-        if batch_num == 0:
-            y_true = labels.cpu()
-            y_pred = preds.cpu()
-            y_probs = probs.cpu()
-        else:
-            y_true = np.concatenate((y_true, labels.cpu()))
-            y_pred = np.concatenate((y_pred, preds.cpu()))
-            y_probs = np.concatenate((y_probs, probs.cpu()))
-
-    return y_true, y_pred, y_probs
