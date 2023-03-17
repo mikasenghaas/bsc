@@ -75,15 +75,11 @@ class ImageDataset(Dataset):
 
         # get all image paths by class
         if self.split == "test":
-            self.images_by_class: dict[
-                str, list[str]
-            ] = load_labelled_image_paths(
+            self.images_by_class = load_labelled_image_paths(
                 os.path.join(PROCESSED_DATA_PATH, "test")
             )
         else:
-            self.images_by_class: dict[
-                str, list[str]
-            ] = load_labelled_image_paths(
+            self.images_by_class = load_labelled_image_paths(
                 os.path.join(PROCESSED_DATA_PATH, "train")
             )
 
