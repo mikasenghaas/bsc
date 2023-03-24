@@ -4,6 +4,7 @@
 **/data/processed/*
 **/data/raw/*
 models
+artifacts
 wandb
 
 # Ignore Files
@@ -14,12 +15,6 @@ test.py
 *.mov
 *.MOV
 *.mp4
-
-# Ignore all artifacts except .ptl (torchscript lite models)
-artifacts/**/*.json
-artifacts/**/*.pt
-artifacts/**/*.pth
-artifacts/**/*.pkl
 
 # Ignore Assets
 qr.png
