@@ -5,8 +5,22 @@ import os
 
 from tqdm import tqdm
 
-from config import *
-from utils import *
+from config import (
+    RAW_DATA_PATH,
+    PROCESSED_DATA_PATH,
+    FPS,
+)
+from utils import (
+    load_preprocess_args,
+    load_metadata,
+    load_annotations,
+    timestamp_to_second,
+    get_label,
+    start_task,
+    end_task,
+    mkdir,
+    ls,
+)
 
 
 def main():
@@ -56,7 +70,7 @@ def main():
         while start_time < duration:
             # max time allowed (either video duration or max clip length)
             max_time = min(duration, start_time + args.max_length)
-            try:
+            if next_label < len(seconds):
                 # get next label time if exists
                 next_label_time = seconds[next_label]
 
@@ -66,7 +80,7 @@ def main():
                     next_label += 1
                 else:
                     end_time = max_time
-            except:
+            else:
                 end_time = max_time
 
             # extract label depending on clip time

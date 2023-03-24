@@ -13,8 +13,10 @@ from torchvision.models import (
     resnet50,
 )
 
-from config import *
-from utils import *
+from config import (
+    CLASSES,
+    PRETRAINED,
+)
 
 MODELS = {
     "alexnet": alexnet,
@@ -36,14 +38,15 @@ class FinetunedImageClassifier(nn.Module):
     Class FineTunedImageClassifier.
 
     Attributes:
-        model_name (str): Identifier of the model to be used. Must be one of the keys of the MODELS/ WEIGHTS dict.
+        model_name (str): Identifier of the model to be used. Must be one of the keys
+                          of the MODELS/ WEIGHTS dict.
         num_classes (int): Number of classes in the dataset to finetune the model on.
         model (nn.Module): Finetuned model.
         num_params (int): Total number of parameters in the model.
         meta (dict): Dictionary containing relevant meta information about the model.
 
     Methods:
-        default_config (dict): Returns a dict containing the default configuration of the model.
+        default_config (dict): Returns a dict containing default model configuration.
         forward (torch.Tensor) -> torch.Tensor: Forward pass of the model.
 
     """
@@ -72,12 +75,21 @@ class FinetunedImageClassifier(nn.Module):
         """
         Initialises a FinetunedImageClassifier instance.
 
-        Takes a model identifier (as specified in keys of MODELS/ WEIGHTS dict) and number of classes as input and returns a nn.Module instance of the finetuned model. If the constructor is given a pretrained argument, the model will be initialised with the pretrained weights from the ImageNet dataset as downloadable from PyTorch. The model will be finetuned by replacing the last layer with a linear layer with the number of classes as output dimension. No weights are frozen, meaning that the finetuning will be done by training all weights of the model.
+        Takes a model identifier (as specified in keys of MODELS/ WEIGHTS dict) and
+        number of classes as input and returns a nn.Module instance of the finetuned
+        model. If the constructor is given a pretrained argument, the model will be
+        initialised with the pretrained weights from the ImageNet dataset as
+        downloadable from PyTorch. The model will be finetuned by replacing the last
+        layer with a linear layer with the number of classes as output dimension.
+        No weights are frozen, meaning that the finetuning will be done by training
+        all weights of the model.
 
         Args:
-            model_name (str): Identifier of the model to be used. Must be one of the keys of the MODELS/ WEIGHTS dict.
-            num_classes (int): Number of classes in the dataset to finetune the model on.
-            pretrained (bool, Optional): If True, the model will be initialised with the pretrained weights
+            model_name (str): Identifier of the model to be used. Must be one of the
+                              keys of the MODELS/ WEIGHTS dict.
+            num_classes (int): Number of classes in the dataset to finetune the model.
+            pretrained (bool, Optional): If True, the model will be initialised with
+                                         the pretrained weights
 
         Returns:
             nn.Module: Finetuned model
@@ -86,10 +98,8 @@ class FinetunedImageClassifier(nn.Module):
         # pre conditions
         assert len(kwargs.keys()) > 0 and all(
             x in kwargs.keys() for x in FinetunedImageClassifier.MANDATORY
-        ), f"Class requires the following parameters: {FinetunedImageClassifier.MANDATORY}"
-        assert (
-            kwargs["model_name"] in MODELS
-        ), f"Choose model from {MODELS.keys()}"
+        ), f"Class requires the parameters: {FinetunedImageClassifier.MANDATORY}"
+        assert kwargs["model_name"] in MODELS, f"Choose model from {MODELS.keys()}"
 
         # parse mandatory kwargs
         self.model_name = kwargs["model_name"]
@@ -106,9 +116,7 @@ class FinetunedImageClassifier(nn.Module):
 
         # replace last layer with linear layer with num_classes as output dimension
         if self.model_name in ["resnet18", "resnet50"]:  # resnet family
-            self.model.fc = nn.Linear(
-                self.model.fc.in_features, self.num_classes
-            )
+            self.model.fc = nn.Linear(self.model.fc.in_features, self.num_classes)
 
         elif self.model_name == "alexnet":  # alexnet
             self.model.classifier[6] = nn.Linear(
@@ -121,9 +129,7 @@ class FinetunedImageClassifier(nn.Module):
             )
 
         # compute total model parameters
-        self.num_params = sum(
-            param.numel() for param in self.model.parameters()
-        )
+        self.num_params = sum(param.numel() for param in self.model.parameters())
 
         # save relevant meta information
         self.meta = kwargs
@@ -134,7 +140,7 @@ class FinetunedImageClassifier(nn.Module):
         Forward pass of the model.
 
         Args:
-            inputs (torch.Tensor): Input tensor of shape (batch_size, channels, height, width)
+            inputs (torch.Tensor): Input tensor of shape (B, C, H, W)
 
         Returns:
             torch.Tensor: Output tensor of shape (batch_size, num_classes)

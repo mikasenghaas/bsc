@@ -1,8 +1,13 @@
 # transforms.py
 #  by: mikasenghaas
 
+import torch
 from torchvision import transforms
-from config import *
+
+from config import (
+    MEAN,
+    STD,
+)
 
 
 class ImageTransformer:
@@ -12,13 +17,14 @@ class ImageTransformer:
     Does the following:
         - Resizes the image to 224x224
         - Normalises the image to the range [0, 1]
-        - Normalises the image to the range [-1, 1] using the mean and standard deviation of the ImageNet dataset
+        - Normalises the image to the range [-1, 1] using the mean and standard
+          deviation of the ImageNet dataset
 
     Attributes:
-        transform (torchvision.transforms.Compose): Compose of transforms to be applied to images.
+        transform (torchvision.transforms.Compose): Compose transforms
 
     Methods:
-        normalise (torch.Tensor) -> torch.Tensor: Normalise a tensor to the range [0, 1].
+        normalise (torch.Tensor) -> torch.Tensor: Normalise a tensor to range [0, 1].
         __call__ (torch.Tensor) -> torch.Tensor: Apply the transform to a tensor.
     """
 
@@ -29,7 +35,7 @@ class ImageTransformer:
                 transforms.Lambda(self.normalise),
                 transforms.Normalize(MEAN, STD, inplace=True),
             ]
-        )  # pyright: ignore
+        )
 
     def normalise(self, tensor: torch.Tensor) -> torch.Tensor:
         return tensor.float() / 255.0

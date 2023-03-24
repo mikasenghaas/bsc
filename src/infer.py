@@ -1,16 +1,19 @@
-import random
 import glob
+import os
+import random
 
 import cv2
-from torch.nn.functional import softmax
+import numpy as np
+import torch
 from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.image import show_cam_on_image
-import wandb
+from torch.nn.functional import softmax
 
-from config import *
+import wandb
+from config import BASEPATH, RAW_DATA_PATH
 from data import ImageDataset
 from model import FinetunedImageClassifier
-from utils import *
+from utils import end_task, load_infer_args, load_json, load_pickle, start_task
 
 
 def main():
@@ -29,9 +32,7 @@ def main():
     artifact = api.artifact(
         f"mikasenghaas/bsc/{args.model}:{args.version}", type="model"
     )  # pyright: ignore
-    filepath = os.path.join(
-        BASEPATH, "artifacts", f"{args.model}:{args.version}"
-    )
+    filepath = os.path.join(BASEPATH, "artifacts", f"{args.model}:{args.version}")
     if not os.path.exists(filepath):
         artifact.download(root=filepath)
 
@@ -63,9 +64,7 @@ def main():
         video_path = os.path.join(random.choice(clip_paths), "video.mov")
     else:
         # specific video path in split
-        video_path = os.path.join(
-            RAW_DATA_PATH, args.split, args.clip, "video.mov"
-        )
+        video_path = os.path.join(RAW_DATA_PATH, args.split, args.clip, "video.mov")
 
     if args.gradcam:
         if args.model == "resnet18":
@@ -81,20 +80,13 @@ def main():
     start_task(f"Starting Inference on {'/'.join(video_path.split('/')[-3:])}")
     while True:
         # read next frame
-        (
-            _,
-            frame,
-        ) = cap.read()  # np.ndarray, (H=1920, W=1080, C=3), dtype=np.uint8
-        frame_tensor = torch.tensor(frame).permute(
-            2, 0, 1
-        )  # torch.tensor, (C, H, W)
+        _, frame = cap.read()
+        frame_tensor = torch.tensor(frame).permute(2, 0, 1)  # torch.tensor, (C, H, W)
         # change channel to RGB from BGR
         frame_tensor = frame_tensor[[2, 1, 0], :, :]
-        transformed_tensor = transform(frame_tensor).unsqueeze(
-            0
-        )  # transform tensor
+        transformed_tensor = transform(frame_tensor).unsqueeze(0)  # transform tensor
 
-        if frame_tensor == None:
+        if frame_tensor is None:
             break
 
         # predict frame
@@ -115,9 +107,7 @@ def main():
             # np.ndarray, (1920, 1080, 3), dtype=np.float32
             normalised_frame = frame.astype(np.float32) / 255.0
 
-            frame = show_cam_on_image(
-                normalised_frame, gradcam, image_weight=0.7
-            )
+            frame = show_cam_on_image(normalised_frame, gradcam, image_weight=0.7)
 
         text = f"{class_label} ({round(100 * prob, 1)}%)"
 

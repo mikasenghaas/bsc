@@ -1,13 +1,23 @@
 # data.py
 #  by: mika senghaas
 
-import glob
+import os
 import random
+
 import torchvision
 from torch.utils.data import Dataset
 
-from config import *
-from utils import *
+from config import (
+    CLASSES,
+    PROCESSED_DATA_PATH,
+    RATIO,
+    SEED,
+    SPLIT,
+    SPLITS,
+    TRAIN_RATIO,
+    VAL_RATIO,
+)
+from utils import load_labelled_image_paths
 
 
 # load data
@@ -33,9 +43,9 @@ class ImageDataset(Dataset):
     @staticmethod
     def default_config():
         """
-        Staticmethod that contains all expected arguments for initialising a ImageDataset
-        object. The values are taken from config.py. Use this method either on the class like
-        ImageDataset.default_config()
+        Staticmethod that contains all expected arguments for initialising a
+        ImageDataset object. The values are taken from config.py. Use this method either
+        on the class like ImageDataset.default_config()
         """
         # default configuration for ImageDataset
         split: str = SPLIT
@@ -51,7 +61,8 @@ class ImageDataset(Dataset):
     def __init__(self, **kwargs):
         assert len(kwargs.keys()) > 0 and all(
             x in kwargs.keys() for x in ImageDataset.default_config().keys()
-        ), f"Class needs to be initialised with default values for 'filepath', 'split', 'include_classes' and 'ratio'."
+        ), "Class needs to be initialised with default values for \
+                'filepath', 'split', 'include_classes' and 'ratio'."
 
         # save kwargs into variables
         self.split = kwargs["split"]
@@ -63,15 +74,11 @@ class ImageDataset(Dataset):
             self.id2class = kwargs["id2class"]
 
         # pre conditions
-        assert (
-            self.split in SPLITS
-        ), "Split must be either 'train', 'val' or 'test'"
+        assert self.split in SPLITS, "Split must be either 'train', 'val' or 'test'"
         assert all(
             x in CLASSES for x in self.include_classes
         ), f"Only include classes from {CLASSES}"
-        assert (
-            self.ratio > 0.0 and self.ratio <= 1.0
-        ), "Ratio needs to be in ]0,1]"
+        assert self.ratio > 0.0 and self.ratio <= 1.0, "Ratio needs to be in ]0,1]"
 
         # get all image paths by class
         if self.split == "test":
@@ -97,12 +104,8 @@ class ImageDataset(Dataset):
                 self.images_by_class[key] = random.sample(val, n)
 
         # convert to shuffled flattened list of paths
-        image_paths = [
-            image_paths for image_paths in self.images_by_class.values()
-        ]
-        image_paths = [
-            item for sublist in image_paths for item in sublist
-        ]  # flatten
+        image_paths = [image_paths for image_paths in self.images_by_class.values()]
+        image_paths = [item for sublist in image_paths for item in sublist]  # flatten
         random.Random(SEED).shuffle(image_paths)
 
         # subset image paths
@@ -117,15 +120,13 @@ class ImageDataset(Dataset):
             self.image_paths = image_paths[-self.num_samples :]
 
         # meta
-        self.class_distribution = {
-            k: len(v) for k, v in self.images_by_class.items()
-        }
+        self.class_distribution = {k: len(v) for k, v in self.images_by_class.items()}
         self.classes = list(self.class_distribution.keys())
         self.num_classes = len(self.classes)
         if "class2id" not in kwargs:
-            self.class2id = {l: i for i, l in enumerate(self.classes)}
+            self.class2id = {label: i for i, label in enumerate(self.classes)}
         if "id2class" not in kwargs:
-            self.id2class = {i: l for i, l in enumerate(self.classes)}
+            self.id2class = {i: label for i, label in enumerate(self.classes)}
 
         # meta information to log
         self.meta = kwargs
