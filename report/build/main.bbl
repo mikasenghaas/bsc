@@ -1,8 +1,0 @@
-\begin{thebibliography}{1}
-
-\bibitem{resnet}
-Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun.
-\newblock Deep residual learning for image recognition.
-\newblock {\em CoRR}, abs/1512.03385, 2015.
-
-\end{thebibliography}
