@@ -7,6 +7,10 @@ models
 artifacts
 wandb
 
+# Ignore Tex Build, except compiled PDF
+report/build/*
+!report/build/main.pdf
+
 # Ignore Files
 test.py
 .DS_Store
