@@ -22,7 +22,7 @@ DEVICE: str = (
 BASEPATH: str = "/".join(os.path.abspath(__file__).split("/")[:-2])
 RAW_DATA_PATH: str = os.path.join(BASEPATH, "src", "data", "raw")
 PROCESSED_DATA_PATH: str = os.path.join(BASEPATH, "src", "data", "processed")
-MODEL_PATH: str = os.path.join(BASEPATH, "src", "models")
+ARTIFACTS_PATH: str = os.path.join(BASEPATH, "artifacts")
 
 # CLASSES
 CLASSES: list[str] = sorted(
@@ -50,35 +50,41 @@ CLASSES: list[str] = sorted(
     ]
 )
 GROUND_FLOOR: list[str] = [x for x in CLASSES if x.find("Ground_Floor") >= 0]
-FIRST_FLOOR: list[str] = [
-    x for x in CLASSES if x.find("First_Floor") >= 0 or x == "Stairs_Atrium"
-]
+FIRST_FLOOR: list[str] = [x for x in CLASSES if x not in GROUND_FLOOR]
+
+# CLASS2ID
+CLASS2ID: dict[str, int] = {x: i for i, x in enumerate(CLASSES)}
+ID2CLASS: dict[int, str] = {i: x for i, x in enumerate(CLASSES)}
 
 # PREPROCESS
 MAX_LENGTH: int = 10
-FPS: int = 4
+FPS: int = 1
 HEIGHT: int = 224
 WIDTH: int = 224
 
 # DATA
-SPLITS: list[str] = ["train", "val", "test"]
-SPLIT: str = "train"
+SPLITS: list[str] = ["train", "test"]
+DEFAULT_SPLIT: str = "test"
 RATIO: float = 1.0
-TRAIN_RATIO: float = 0.8
-VAL_RATIO: float = 0.2
 
 # TRANSFORMS
 MEAN: torch.Tensor = torch.tensor([0.485, 0.456, 0.406])
 STD: torch.Tensor = torch.tensor([0.229, 0.224, 0.225])
 
 # TRAINING
-PRETRAINED: bool = True
-MAX_EPOCHS: int = 5
+MAX_EPOCHS: int = 10
 BATCH_SIZE: int = 32
 LR: float = 1e-4
 STEP_SIZE: int = 5
 GAMMA: float = 0.1
 LOG: bool = False
+
+# MODEL
+CNN_MODULES = [ "alexnet", "resnet18", "resnet50", "mobilenet_v3_small" ]
+RNN_MODULES = ["rnn", "lstm"]
+
+IMAGE_CLASSIFIERS = CNN_MODULES
+VIDEO_CLASSIFIERS = [f"{cnn}-{rnn}" for cnn in CNN_MODULES for rnn in RNN_MODULES]
 
 # EVALUATE
 DURATION: int = 10

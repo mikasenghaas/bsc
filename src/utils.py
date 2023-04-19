@@ -6,7 +6,6 @@ Author: Mika Senghaas
 
 import argparse
 import datetime
-import glob
 import json
 import math
 import os
@@ -14,7 +13,7 @@ import pickle
 import timeit
 from typing import Any
 
-import ffmpeg
+import cv2
 import pandas as pd
 import torch
 from matplotlib import animation
@@ -34,7 +33,6 @@ from config import (
     LR,
     MAX_EPOCHS,
     MAX_LENGTH,
-    PRETRAINED,
     RATIO,
     RAW_DATA_PATH,
     SPLITS,
@@ -140,13 +138,6 @@ def add_model_args(group):
         default="latest",
         help="Model Version. Either 'latest' or 'vX'",
     )
-    group.add_argument(
-        "--pretrained",
-        action=argparse.BooleanOptionalAction,
-        default=PRETRAINED,
-        help="Finetune pre-trained model",
-    )
-
 
 def load_preprocess_args() -> argparse.Namespace:
     """
@@ -248,6 +239,27 @@ def load_train_args() -> argparse.Namespace:
 
     return args
 
+def load_eval_args() -> argparse.Namespace:
+    """
+    Return parsed arguments for script eval.py.
+
+    Returns:
+        argparse.Namespace: Parsed arguments
+    """
+    parser = argparse.ArgumentParser()
+
+    # model and general args
+    model_group = parser.add_argument_group(title="Model Arguments")
+    general_group = parser.add_argument_group(title="Data Arguments")
+
+    add_model_args(model_group)
+    add_general_args(general_group)
+
+    # parse args
+    args = parser.parse_args()
+
+    return args
+
 
 def load_infer_args() -> argparse.Namespace:
     """
@@ -304,8 +316,6 @@ def mkdir(filepath: str) -> bool:
     Returns:
         bool: True if directory was created, False if it already exists
     """
-    if filepath.find(".") >= 0:
-        filepath = "/".join(filepath.split("/")[:-1])
     if not os.path.exists(filepath):
         os.makedirs(filepath)
         return True
@@ -367,9 +377,7 @@ def get_progress_bar(
     max_epochs: int,
     batch: int,
     max_batches: int,
-    running_training_time: float,
-    running_inference_time: float,
-    samples_seen: int,
+    training_time: float,
     train_loss: float,
     train_acc: float,
     val_loss: float,
@@ -397,16 +405,15 @@ def get_progress_bar(
     # format function inputs
     a = f"{str(epoch)}".zfill(len(str(max_epochs)))
     b = f"{str(batch)}".zfill(len(str(max_batches)))
-    c = f"{round(running_training_time / samples_seen * 1000, 1)}ms"
-    d = f"{round(running_inference_time / samples_seen * 1000, 1)}ms"
-    e = f"{train_loss:.3f}"
-    f = f"{(train_acc * 100):.1f}%"
-    g = f"{val_loss:.3f}"
-    h = f"{(val_acc * 100):.1f}%"
+    c = f"{round(training_time * 1000, 2)}ms"
+    d = f"{train_loss:.3f}"
+    e = f"{(train_acc * 100):.1f}%"
+    f = f"{val_loss:.3f}"
+    g = f"{(val_acc * 100):.1f}%"
 
     return (
-        f"{a}/{max_epochs} | {b}/{max_batches} | {c} | {d} | "
-        f"Train: {e} ({f}) | Val: {g} ({h})"
+        f"{a}/{max_epochs} | {b}/{max_batches} | {c} | "
+        f"Train: {d} ({e}) | Val: {f} ({g})"
     )
 
 
@@ -418,10 +425,15 @@ def load_metadata(filepath: str) -> dict:
         filepath (str): Path to video file
 
     Returns:
-        dict: Metadata of video file
+        tuple[int, int]: Return a tuple of form (duration, frame_count)
     """
-    meta = ffmpeg.probe(filepath).get("format")
-    return meta
+    video = cv2.VideoCapture(filepath)
+
+    frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    duration = int(frame_count // video.get(cv2.CAP_PROP_FPS))
+
+    return duration, frame_count
 
 
 def load_annotations(filepath: str) -> list[tuple[str, str]]:
@@ -652,40 +664,22 @@ def get_label(second_in_video: int, annotations: list[tuple[str, str]]) -> str:
     # if second in video is greater than all timestamps, return the last label
     return annotations[-1][1]
 
-
-def load_labelled_image_paths(
-    filepath: str,
-) -> dict[str, list[tuple[str, str]]]:
+def load_labels(filepath: str) -> list[str]:
     """
-    Load the labelled image paths from a given filepath.
-
-    Assumes the following directory structure:
-    filepath
-    ├── label1
-    │   ├── image1.jpg
-    │   ├── image2.jpg
-    │   └── ...
-    ├── label2
-    │   ├── image1.jpg
-    │   └── ...
-    └── ...
+    Load a list of labels from a text file. Assumes that each label
+    is on a new line.
 
     Args:
-        filepath (str): Path to the directory containing the labelled images
+        filepath (str): Path to the text file
 
     Returns:
-        dict: Dictionary of the form {label: [(image_path, label), ...], ...}
+        list[str]: List of labels
     """
-    labelled_image_paths = {}
-
-    for label_paths in glob.glob(os.path.join(filepath, "*")):
-        label = label_paths.split("/")[-1]
-        labelled_image_paths[label] = []
-        for path in glob.glob(os.path.join(label_paths, "**/**")):
-            labelled_image_paths[label].append((path, label))
-
-    return labelled_image_paths
-
+    labels = []
+    with open(filepath, "r") as f:
+        for line in f:
+            labels.append(line.strip())
+    return labels
 
 def save_pickle(obj: Any, filepath: str) -> None:
     """
