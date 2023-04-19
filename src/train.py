@@ -126,7 +126,7 @@ def train(
                 best_train_acc = train_acc
 
             progress = get_progress_bar(
-                epoch,
+                epoch + 1,
                 args.max_epochs,
                 batch_num + 1,
                 len(train_loader),
@@ -192,7 +192,7 @@ def train(
                 best_val_acc = val_acc
 
             progress = get_progress_bar(
-                epoch,
+                epoch + 1,
                 args.max_epochs,
                 batch_num + 1,
                 len(val_loader),
