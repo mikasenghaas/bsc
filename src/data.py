@@ -2,26 +2,103 @@
 #  by: mika senghaas
 
 import os
+import abc
+import glob
 import random
+from collections import defaultdict
 
+import torch
 import torchvision
 from torch.utils.data import Dataset
 
 from config import (
-    CLASSES,
     PROCESSED_DATA_PATH,
-    RATIO,
-    SEED,
-    SPLIT,
+    DEFAULT_SPLIT,
+    CLASSES,
     SPLITS,
-    TRAIN_RATIO,
-    VAL_RATIO,
+    RATIO,
 )
-from utils import load_labelled_image_paths
+from utils import ls, load_labels
 
 
-# load data
-class ImageDataset(Dataset):
+class BaseDataset(abc.ABC, Dataset):
+    @staticmethod
+    def default_config():
+        """
+        Staticmethod that contains all expected arguments for initialising a
+        ImageDataset or VideoDataset object. The values are taken from config.py.
+        """
+        # default configuration for ImageDataset
+        split: str = DEFAULT_SPLIT
+        include_classes: list[str] = sorted(CLASSES)
+        ratio: float = RATIO
+
+        return {
+            "split": split,
+            "include_classes": include_classes,
+            "ratio": ratio,
+        }
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__()
+        # check all preconditions
+        self.check_preconditions(kwargs)
+
+        # save kwargs into variables
+        self.split = kwargs["split"]
+        self.ratio = kwargs["ratio"]
+        self.include_classes = sorted(kwargs["include_classes"])
+
+        # build class2id and id2class given sorted included classes
+        self.class2id = {x: i for i, x in enumerate(self.include_classes)}
+        self.id2class = {i: x for i, x in enumerate(self.include_classes)}
+
+        # build dict of image paths and labels by video
+        self.frames_by_clip: dict[str, list[tuple[str, str]]] = {}
+
+        data_path = os.path.join(PROCESSED_DATA_PATH, self.split)
+        for video_id in ls(data_path):
+            # read frame paths into list
+            all_paths = sorted(glob.glob(os.path.join(data_path, video_id, "*")))
+            frame_paths = [path for path in all_paths if path.endswith(".jpg")]
+
+            # read labels for frames into list
+            labels_path = os.path.join(data_path, video_id, "labels.txt")
+            labels = load_labels(labels_path)
+
+            # zip frame paths and labels into list of tuples
+            frames_with_labels = list(zip(frame_paths, labels))
+
+            # add to dictionary
+            self.frames_by_clip[video_id] = frames_with_labels
+
+    def check_preconditions(self, kwargs):
+        """
+        Check if all preconditions are met before initialising the dataset.
+        """
+        # assert that kwargs contains all keys from default_config
+        error_msg = (
+            f"Class needs to be initialised with default values "
+            f"for {self.default_config().keys()}"
+        )
+        assert len(kwargs.keys()) > 0 and all(
+            x in kwargs.keys() for x in ImageDataset.default_config().keys()
+        ), error_msg
+
+        # assert that all included classes are valid (i.e. in CLASSES)
+        error_msg = f"Only include classes from {CLASSES}"
+        assert all(x in CLASSES for x in kwargs["include_classes"]), error_msg
+
+        # assert that ratio is in ]0,1]
+        error_msg = "Ratio needs to be in ]0,1]"
+        assert 0.0 < kwargs["ratio"] <= 1.0, error_msg
+
+        # assert that split is valid, i.e. in SPLITS
+        error_msg = f"Split must be in {SPLITS}"
+        assert kwargs["split"] in SPLITS, error_msg
+
+
+class ImageDataset(BaseDataset):
     """
     ImageDataset extends the default torch.utils.Dataset class to sample random frames
     from an image dataset. Upon instantiation it loads all image paths to memory given
@@ -40,93 +117,34 @@ class ImageDataset(Dataset):
     ratio : float = Randomly sample ratio samples within each class
     """
 
-    @staticmethod
-    def default_config():
-        """
-        Staticmethod that contains all expected arguments for initialising a
-        ImageDataset object. The values are taken from config.py. Use this method either
-        on the class like ImageDataset.default_config()
-        """
-        # default configuration for ImageDataset
-        split: str = SPLIT
-        include_classes: list[str] = sorted(CLASSES)
-        ratio: float = RATIO
-
-        return {
-            "split": split,
-            "include_classes": include_classes,
-            "ratio": ratio,
-        }
-
     def __init__(self, **kwargs):
-        assert len(kwargs.keys()) > 0 and all(
-            x in kwargs.keys() for x in ImageDataset.default_config().keys()
-        ), "Class needs to be initialised with default values for \
-                'filepath', 'split', 'include_classes' and 'ratio'."
+        # initialise base class to run preconditions
+        super().__init__(**kwargs)
 
-        # save kwargs into variables
-        self.split = kwargs["split"]
-        self.include_classes = kwargs["include_classes"]
-        self.ratio = kwargs["ratio"]
-        if "class2id" in kwargs:
-            self.class2id = kwargs["class2id"]
-        if "id2class" in kwargs:
-            self.id2class = kwargs["id2class"]
+        # build dict of image paths and labels by class
+        # subset on include_classes and randomly sample ratio
+        self.frames_by_class: dict[str, list[tuple[str, str]]] = defaultdict(list)
+        for video_id, frames_with_labels in self.frames_by_clip.items():
+            for frame_path, label in frames_with_labels:
+                if label in self.include_classes:
+                    n = int(len(frames_with_labels) * self.ratio)
+                    self.frames_by_class[label] = random.sample(frames_with_labels, n)
 
-        # pre conditions
-        assert self.split in SPLITS, "Split must be either 'train', 'val' or 'test'"
-        assert all(
-            x in CLASSES for x in self.include_classes
-        ), f"Only include classes from {CLASSES}"
-        assert self.ratio > 0.0 and self.ratio <= 1.0, "Ratio needs to be in ]0,1]"
+        # flatten dict into list of tuples
+        self.data: list[tuple[str, str]] = []
+        for frames_with_labels in self.frames_by_clip.values():
+            frames, labels = zip(*frames_with_labels)  # unzip
+            for frame, label in zip(frames, labels):
+                self.data.append((frame, label))
 
-        # get all image paths by class
-        if self.split == "test":
-            self.images_by_class = load_labelled_image_paths(
-                os.path.join(PROCESSED_DATA_PATH, "test")
-            )
-        else:
-            self.images_by_class = load_labelled_image_paths(
-                os.path.join(PROCESSED_DATA_PATH, "train")
-            )
-
-        # subset to only include specified classes
-        self.images_by_class = {
-            k: self.images_by_class[k]
-            for k in self.include_classes
-            if k in self.images_by_class
-        }
-
-        # randomly sample num_classes
-        if self.ratio != 1.0:
-            for key, val in self.images_by_class.items():
-                n = int(len(val) * self.ratio)
-                self.images_by_class[key] = random.sample(val, n)
-
-        # convert to shuffled flattened list of paths
-        image_paths = [image_paths for image_paths in self.images_by_class.values()]
-        image_paths = [item for sublist in image_paths for item in sublist]  # flatten
-        random.Random(SEED).shuffle(image_paths)
-
-        # subset image paths
-        if self.split == "test":
-            self.num_samples = len(image_paths)
-            self.image_paths = image_paths
-        elif self.split == "train":
-            self.num_samples = int(len(image_paths) * TRAIN_RATIO)
-            self.image_paths = image_paths[: self.num_samples]
-        elif self.split == "val":
-            self.num_samples = int(len(image_paths) * VAL_RATIO)
-            self.image_paths = image_paths[-self.num_samples :]
+        # shuffle list
+        # random.Random(1).shuffle(self.data)
 
         # meta
-        self.class_distribution = {k: len(v) for k, v in self.images_by_class.items()}
+        self.class_distribution = {k: len(v) for k, v in self.frames_by_class.items()}
         self.classes = list(self.class_distribution.keys())
         self.num_classes = len(self.classes)
-        if "class2id" not in kwargs:
-            self.class2id = {label: i for i, label in enumerate(self.classes)}
-        if "id2class" not in kwargs:
-            self.id2class = {i: label for i, label in enumerate(self.classes)}
+        self.num_samples = len(self.data)
 
         # meta information to log
         self.meta = kwargs
@@ -139,7 +157,8 @@ class ImageDataset(Dataset):
         )
 
     def __getitem__(self, idx):  # [x1, ..., x10]
-        image_path, label = self.image_paths[idx]
+        # get image path and label
+        image_path, label = self.data[idx]
 
         # load video to tensor
         image_tensor = torchvision.io.read_image(image_path)  # C,H,W
@@ -151,3 +170,91 @@ class ImageDataset(Dataset):
 
     def __len__(self):
         return self.num_samples
+
+
+class VideoDataset(BaseDataset):
+    """
+    VideoDataset extends the default torch.utils.Dataset class to sample random
+    clips of a specified maximum number of frames from a video dataset. Upon
+    instantiation it loads all video paths to memory given a filepath to a
+    directory, with the following expected structure:
+
+    __filepath:
+      |__ clip1
+      |   |__ video1
+      |   |  |__ frame1.jpg
+      |   |  |__ frame2.jpg
+      |   |  |__ ...
+      |   |__ ...
+      |__ ...
+
+    Parameters:
+
+    split : str { train, val, test } = Samples from train, validation or test split
+    include_classes : list[str] = List of classes to include
+    ratio : float = Randomly sample ratio samples within each class
+
+    TODO: Currently disregards include_classes and ratio (not well defined for video)
+    """
+
+    def __init__(self, **kwargs):
+        # initialise base class to run preconditions
+        super().__init__(**kwargs)
+
+        # flatten dictionary
+        self.data = [
+            (video_id, frames_with_labels)
+            for video_id, frames_with_labels in self.frames_by_clip.items()
+        ]
+
+        def partition(lst, n):
+            """Yield successive n-sized chunks from lst."""
+            res = []
+            for i in range(0, len(lst), n):
+                res.append(lst[i : i + n])
+            return res[:-1]
+
+        # partition frames in video in clips
+        self.partioned_data = []
+        for video_id, frames_with_labels in self.data:
+            partioned_frames_with_labels = partition(frames_with_labels, 10)
+            for i, frames_with_labels in enumerate(partioned_frames_with_labels):
+                self.partioned_data.append(frames_with_labels)
+        self.data = self.partioned_data
+
+        # TODO: subset on include_classses?
+        # TODO: randomly sample ratio?
+
+        # meta
+        self.num_samples = len(self.data)
+
+        # store meta information
+        self.meta = kwargs
+        self.meta.update(
+            {
+                "num_samples": self.num_samples,
+            }
+        )
+
+    def __getitem__(self, idx):
+        # get video id and frames with labels
+        frames_with_labels = self.data[idx]
+
+        # unzip frames and labels
+        frame_paths, labels = zip(*frames_with_labels)
+
+        # load frame paths as list of image tenors
+        frame_tensors = [torchvision.io.read_image(fp) for fp in frame_paths]
+
+        # load labels and integer encoding
+        class_ids = [self.class2id[label] for label in labels]
+
+        # convert to tensors
+        frame_tensors = torch.stack(frame_tensors)
+        class_ids = torch.tensor(class_ids)
+
+        return frame_tensors, class_ids
+
+    def __len__(self):
+        return self.num_samples
+
