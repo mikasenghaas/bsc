@@ -10,9 +10,8 @@ from pytorch_grad_cam.utils.image import show_cam_on_image
 from torch.nn.functional import softmax
 
 import wandb
-from config import BASEPATH, RAW_DATA_PATH
-from data import ImageDataset
-from model import FinetunedImageClassifier
+from config import IMAGE_CLASSIFIERS, VIDEO_CLASSIFIERS, BASEPATH, RAW_DATA_PATH
+from model import ImageClassifier, VideoClassifier
 from utils import end_task, load_infer_args, load_json, load_pickle, start_task
 
 
@@ -36,11 +35,6 @@ def main():
     if not os.path.exists(filepath):
         artifact.download(root=filepath)
 
-    # load data
-    config = ImageDataset.default_config()
-    images = ImageDataset(**config)
-    id2class = images.id2class
-
     # paths to model, transforms and config file
     model_path = f"artifacts/{args.model}:{args.version}/{args.model}.pt"
     config_path = f"artifacts/{args.model}:{args.version}/config.json"
@@ -49,9 +43,21 @@ def main():
     # load transforms
     transform = load_pickle(transforms_path)
 
-    # load model
+    # load model config
     config = load_json(config_path)
-    model = FinetunedImageClassifier(**config)
+
+    # load id2class
+    id2class = {int(i): c for i, c in config["id2class"].items()}
+
+    # load model architecture
+    if args.model in IMAGE_CLASSIFIERS:
+        model = ImageClassifier(**config)
+    elif args.model in VIDEO_CLASSIFIERS:
+        model = VideoClassifier(**config)
+    else:
+        raise Exception(f"Model {args.model} is not implemented")
+
+    # load model state
     model.load_state_dict(torch.load(model_path))
 
     # set eval mode
@@ -78,19 +84,35 @@ def main():
     cap = cv2.VideoCapture(video_path)  # type: ignore
 
     start_task(f"Starting Inference on {'/'.join(video_path.split('/')[-3:])}")
+    frame_history = []
+    i = 0
     while True:
         # read next frame
         _, frame = cap.read()
-        frame_tensor = torch.tensor(frame).permute(2, 0, 1)  # torch.tensor, (C, H, W)
-        # change channel to RGB from BGR
-        frame_tensor = frame_tensor[[2, 1, 0], :, :]
-        transformed_tensor = transform(frame_tensor).unsqueeze(0)  # transform tensor
 
-        if frame_tensor is None:
+        # break if no frame
+        if frame is None:
             break
 
+        # preprocess frame
+        frame_tensor = torch.tensor(frame).permute(2, 0, 1)  # torch.tensor, (C, H, W)
+        frame_tensor = frame_tensor[[2, 1, 0], :, :] # change channel to RGB from BGR
+        frame_tensor = transform(frame_tensor)  # transform tensor
+        frame_tensor = frame_tensor.unsqueeze(0) # T, C, H, W
+
+        if i % 10 == 0: # 3 fps
+            frame_history.append(frame_tensor.unsqueeze(0))
+            if len(frame_history) > 10:
+                frame_history.pop(0)
+
         # predict frame
-        logits = model(transformed_tensor)
+        if args.model in VIDEO_CLASSIFIERS:
+            frame_tensors = torch.cat(frame_history, dim=1)
+            logits = model(frame_tensors)
+            logits = logits[:, -1, :] # get logits for last frame
+        else:
+            logits = model(frame_tensor)
+
         probs = softmax(logits, 1)
         prob, pred = torch.max(probs, 1)
         prob, pred = prob.item(), pred.item()
@@ -122,6 +144,8 @@ def main():
         # exit the loop if the 'q' key is pressed
         if cv2.waitKey(1) & 0xFF == ord("q"):  # type: ignore
             break
+
+        i += 1
 
     # release the video capture and close window
     cap.release()
