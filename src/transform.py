@@ -10,9 +10,10 @@ from config import (
 )
 
 
-class ImageTransformer:
+class FrameTransformer:
     """
-    Class to transform images to the format required by FinetunedImageClassifier.
+    Class to transform images to the format required by ImageClassifier and
+    VideoClassifier.
 
     Does the following:
         - Resizes the image to 224x224
@@ -31,14 +32,38 @@ class ImageTransformer:
     def __init__(self) -> None:
         self.transform = transforms.Compose(
             [
-                transforms.Resize((224, 224)),
-                transforms.Lambda(self.normalise),
+                transforms.Resize((224, 224), antialias=False),
+                transforms.Lambda(self.scale),
                 transforms.Normalize(MEAN, STD, inplace=True),
             ]
         )
 
-    def normalise(self, tensor: torch.Tensor) -> torch.Tensor:
+    def scale(self, tensor: torch.Tensor) -> torch.Tensor:
         return tensor.float() / 255.0
 
     def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
-        return self.transform(tensor)
+        """
+        Applies a series of transformations (resizing, normalising), to a
+        single tensor (C, H, W), or a batch of tensors (B, C, H, W), or a batch
+        of sequences of tensors (B, T, C, H, W).
+
+        Args:
+            tensor (torch.Tensor): Tensor to transform
+
+        Returns:
+            torch.Tensor: Transformed tensor
+        """
+        msg = "Tensor must be of shape (B, T, C, H, W), or (B, C, H, W), or (C, H, W)"
+        assert tensor.ndim in [3, 4, 5], msg
+        transformed = False
+        if tensor.ndim == 5:
+            B, T, C, H, W = tensor.shape
+            tensor = tensor.view(B * T, C, H, W)
+            transformed = True
+
+        transformed_tensor = self.transform(tensor)
+
+        if transformed:
+            return transformed_tensor.view(B, T, C, H, W)
+
+        return transformed_tensor
