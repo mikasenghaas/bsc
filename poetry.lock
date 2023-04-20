@@ -279,6 +279,22 @@ files = [
 ]
 
 [[package]]
+name = "calplot"
+version = "0.1.7.5"
+description = "Calendar heatmaps from Pandas time series data"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "calplot-0.1.7.5.tar.gz", hash = "sha256:3c1781bd1ded9ef23fa58d512c7e2a3e3c2e4e81da96d870b9223004aaa6fcfa"},
+]
+
+[package.dependencies]
+matplotlib = "*"
+numpy = "*"
+pandas = ">=1"
+
+[[package]]
 name = "certifi"
 version = "2022.12.7"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -4010,4 +4026,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "3.10.*"
-content-hash = "9240244899094ab6dd04747cf5a2f5526fbf8782efacba8d6523d3ad5b07e00f"
+content-hash = "74e9143c831248d1537ddc4249bf0d0cac957acf1b7790c11980c21af95c6bcc"
