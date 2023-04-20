@@ -14,6 +14,8 @@
 \usepackage{color}
 \usepackage{nth}
 \usepackage{bm}
+\usepackage{caption}
+\usepackage{subcaption}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% Page Setting %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -203,14 +205,12 @@
 
   For the scope of this project, the data set was collected at the main building
   of the southern campus of the Copenhagen University (Danish: K\o{}benhavns
-  Universitet, KU) in Copenhagen, Denmark, and spans the two floors of the
-  building. The location was chosen because it allowed for easy data collection
-  and annotation, and because it is a relatively large building with similar
-  indoor features, especially across floors, which was presumed to be a
-  challenge for the model.
+  Universitet, KU) in Copenhagen, Denmark, and spans two floors of the
+  multi-storey building. The location was chosen because it allowed for easy
+  data collection and annotation, and because it is a relatively large building
+  with similar indoor features, especially across floors, which was presumed to
+  be a challenge for the model.
 
-  % TODO: make overview of statistics of training data, like
-  % total duration of video footage, #frames, #locations, #videos, etc.
   The data set was continuously collected from a single camera of a mobile
   device that was hand-held by a human agent while walking around the building.
   The camera was set to record video footage at the resolution of 2426x1125
@@ -219,13 +219,52 @@
   internal storage, and later transferred to a computer for annotation and
   further processing.
 
-  % TODO: make table with all location labels
+  \begin{table}[h]
+    \centering
+    \begin{tabular}{lrrrr}
+    \toprule
+     & \#Clips & \#Frames & \#Seconds & \#Mins \\
+    Split &  &  &  &  \\
+    \midrule
+    Training & 37 & 2240 &  2240 & 37 \\
+    Testing & 16 & 783 & 783 & 13 \\
+    \bottomrule
+    \end{tabular}
+    \caption{Statistics of the Training and Test Splits}
+    \label{tab:data-stats}
+  \end{table}
+
+  % TODO: make overview of statistics of training data, like
+  % total duration of video footage, #frames, #locations, #videos, etc.
+
   The two floors in the building were separate into 21 different location labels
-  following the building's floor plan. The location labels were denoted by
-  descriptive identifiers. To match the location labels to the video footage,
-  each video was manually annotated by denoting the starting and ending time
-  stamps of a location label. The information was stored in a standardised
-  format.
+  following the building's floor plan (Figure~\ref{fig:map}). The location
+  labels were denoted by descriptive identifiers. To match the location labels
+  to the video footage, each video was manually annotated by denoting the
+  starting and ending time stamps of a location label. The information was
+  stored in a standardised format.
+
+  % figure
+  \begin{figure}[ht]
+    \centering
+    % subfigure
+    \begin{subfigure}[b]{0.49\linewidth}
+      \centering
+      \includegraphics[width=\linewidth]{figures/map-ground-floor.jpg}
+      \caption{Ground Floor}
+      \label{fig:map-ground-floor}
+    \end{subfigure}
+    \hfill
+    % subfigure
+    \begin{subfigure}[b]{0.49\linewidth}
+      \centering
+      \includegraphics[width=\linewidth]{figures/map-first-floor.jpg}
+      \caption{First Floor}
+      \label{fig:map-first-floor}
+    \end{subfigure}
+    \caption{Map of KU Southern Campus Main Building with Location Labels}
+    \label{fig:map}
+  \end{figure}
 
 
   % subsection data-collection (end)
@@ -263,10 +302,16 @@
   lighting conditions, temporal objects, and other factors that could affect the
   model's performance.
 
-  % TODO: show example of several frame-location label pairs
   Some examples of frame-location label pairs after preprocessing are shown in
-  Figure X.
-  %\ref{fig:preprocessed-data}.
+  Figure~\ref{fig:preprocessed-data}.
+
+  % figure
+  \begin{figure}[ht]
+    \centering
+    \includegraphics[width=\linewidth]{figures/preprocessed-data.jpg}
+    \caption{Examples of preprocessed frame-location pairs}
+    \label{fig:preprocessed-data}
+  \end{figure}
   
   % subsection data-preprocessing (end)
 
@@ -283,8 +328,6 @@
   problem at hand. This approach is advantageous because it allows for the
   training of a model with a relatively small data set, while still achieving
   good performance.
-
-
 
   % subsection models (end)
 
