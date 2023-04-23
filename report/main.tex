@@ -3,7 +3,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% Using Packages %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage{geometry}
+\usepackage[margin=1in]{geometry}
 \usepackage{graphicx}
 \usepackage{amssymb}
 \usepackage{amsmath}
@@ -16,6 +16,7 @@
 \usepackage{bm}
 \usepackage{caption}
 \usepackage{subcaption}
+\usepackage{url}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% Page Setting %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -29,6 +30,11 @@
 \definecolor{deepBlue}{RGB}{61,124,222}
 \definecolor{shallowBlue}{RGB}{235,249,255}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%% Macros %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\DeclareMathOperator{\Lagr}{\mathcal{L}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 \begin{document}
   % custom title page
@@ -171,10 +177,12 @@
   replace the original components in a SLAM pipeline, such as feature
   extraction, feature matching, or pose estimation, with a deep neural network,
   whereas we use deep learning to learn a mapping from images to location
-  labels.
+  
 
   % TODO: section about some of the inherent challenges of image classification
   % of location based of frames of indoor spaces
+  % lighting, camera angle, temporal
+  %objects, humans crossing the camera's view, labels.
 
   % TODO: mention the success of deep learning in computer vision (resnet, ...)
 
@@ -185,64 +193,46 @@
 
   The project is an end-to-end machine learning pipeline, meaning that it
   starts with the collection of data, and ends with the deployment of a
-  production-ready model. The pipeline consists of the following steps, which
-  will each be described in detail in the following sections.
-
-  \begin{enumerate}
-    \item Data Collection
-    \item Data Preprocessing 
-    \item Different Model Architecture
-    \item Experiment Setup
-  \end{enumerate}
+  production-ready model. 
 
   \subsection{Data Collection} % (fold)
   \label{sub:data-collection}
 
-  By framing the problem of indoor localisation as a classification task, the
-  project requires a labelled data set, which consists of pairs of images
-  (frames in a video sequence) and location labels, $(x_i, y_i)$, where $x_i$ is
-  a single frame of video footage, and $y_i$ is the location label of the frame.
+  % how does that data need to look?
+  % where was the data collected (why not online data set)
+  % when was the data collected
+  % how the data was collected
+  % how was the data annotated
 
-  For the scope of this project, the data set was collected at the main building
-  of the southern campus of the Copenhagen University (Danish: K\o{}benhavns
-  Universitet, KU) in Copenhagen, Denmark, and spans two floors of the
-  multi-storey building. The location was chosen because it allowed for easy
-  data collection and annotation, and because it is a relatively large building
-  with similar indoor features, especially across floors, which was presumed to
-  be a challenge for the model.
+  Framing the problem of indoor localisation as a classification task requires a
+  labelled data set, which consists of sequentially-arranged pairs of video
+  frames and location labels. A single video clip $C$ consists of a sequence of
+  $n$ frames $x_0, ..., x_n$ and a sequence of $n$ location labels $y_0, ...,
+  y_n$, where the $i$-th pair of the sequence is the tuple $(x_i,y_i)$ and
+  denotes the location at a specific frame. A single frame $x_i$ is a RGB image,
+  represented as a three-dimensional tensor of shape $3 \times H \times W$,
+  where $H$ and $W$ are the height and width of the image, respectively. A
+  single location label $y_i$ is a scalar value, which identifies the location
+  of the agent at the time of the frame. 
 
-  The data set was continuously collected from a single camera of a mobile
-  device that was hand-held by a human agent while walking around the building.
-  The camera was set to record video footage at the resolution of 2426x1125
-  pixels, and a frame rate of 30 frames per second (FPS). The camera was set to
-  record video footage continuously, and the footage was stored on the device's
-  internal storage, and later transferred to a computer for annotation and
-  further processing.
-
-  \begin{table}[h]
-    \centering
-    \begin{tabular}{lrrrr}
-    \toprule
-     & \#Clips & \#Frames & \#Seconds & \#Mins \\
-    Split &  &  &  &  \\
-    \midrule
-    Training & 37 & 2240 &  2240 & 37 \\
-    Testing & 16 & 783 & 783 & 13 \\
-    \bottomrule
-    \end{tabular}
-    \caption{Statistics of the Training and Test Splits}
-    \label{tab:data-stats}
-  \end{table}
-
-  % TODO: make overview of statistics of training data, like
-  % total duration of video footage, #frames, #locations, #videos, etc.
-
-  The two floors in the building were separate into 21 different location labels
-  following the building's floor plan (Figure~\ref{fig:map}). The location
-  labels were denoted by descriptive identifiers. To match the location labels
-  to the video footage, each video was manually annotated by denoting the
-  starting and ending time stamps of a location label. The information was
-  stored in a standardised format.
+  % place of data collection
+  The data set was collected from a single camera of a mobile
+  device~\footnote{iPhone 11 Pro recording at 30 FPS with 2426x1125 HD
+  resolution} that was hand-held by a human agent while walking around an indoor
+  building. The chosen location for the data collection was the main building of
+  the Southern Campus of the Copenhagen University (Danish: K\o{}benhavns
+  Universitet, KU) in Copenhagen S, Denmark. The building is a large
+  multi-storey building with a total of six floors, and is used for teaching and
+  research purposes. The location was deemed ideal for this initial research, as
+  it both has distinctive indoor features (e.g. coloured walls, unique
+  structures, etc.), but also poses a challenge for the model, for example, due
+  to the similarity of the floor plan across floors.
+  For the scope of this project, the data collection was limited to the first
+  two floors. The publicly accessible areas were separated into 21 different
+  location labels (Figure~\ref{fig:map}), in close correspondence to the
+  official building's floor plan. The location labels were denoted with
+  descriptive identifiers (e.g. \texttt{Ground Floor Atrium},
+  \texttt{First Floor Red Area}, etc.)
 
   % figure
   \begin{figure}[ht]
@@ -266,16 +256,55 @@
     \label{fig:map}
   \end{figure}
 
+  To match the location labels to the video footage, each clip $C$ was manually
+  annotated by denoting the starting and ending time stamps of a location label.
+  The information was stored in a standardised format and later used in the
+  pre-processing of clips into frame-location pairs.
+
+  % statistics of the data
+  A total of 53 video clips were recorded, with an average duration of ~57s,
+  amounting to a total number of $\sim$ 50 minutes of footage. Out of the total
+  53 video clips that were recorded, 37 were used for training and 16 were used
+  for validation. Table~\ref{tab:data-stats} shows more statistics of the raw
+  data in the two different splits.
+
+  \begin{table}[ht]
+    \centering
+    \begin{tabular}{llll}
+    \toprule
+    \bfseries Split & Total Clips & Total Seconds & Total Minutes \\
+    \midrule
+    Training & 37 &  2240 & 37 \\
+    Testing & 16 & 783 & 13 \\
+    \bottomrule
+    \end{tabular}
+    \caption{Statistics of the Raw Data in Training and Testing Splits}
+    \label{tab:data-stats}
+  \end{table}
+
+  % time of data collection
+  An ideal model learns robust indoor features that are invariant to natural 
+  variations in the indoor space from training data collected in a minimal time
+  span, as this minimises the initial cost and effort for data collection.
+  To evaluate the model's robustness towards these variations, a different
+  philosophy was adopted for the collection of training and testing data.
+
+  While the 37 training clips were recorded on just two days, the 16 testing
+  clips were recorded on four different days, two to four weeks after the
+  initial training data collection. This was done to make the testing data
+  closer resemble real-world scenarios, and thereby make the testing metrics
+  more robust.
+  
+  % TODO: figure about the time of data collection (side-by-side, one where hue
+  %       denotes the split and the other where hue denotes the clips per day)
 
   % subsection data-collection (end)
 
   \subsection{Data Preprocessing} % (fold)
   \label{sub:data-preprocessing}
 
-  The data set was pre-processed to make it suitable for fine-tuning several deep
-  learning models. The pre-processing steps broadly involved resizing the video
-  footage to a smaller resolution, down-sampling the frame rate, and splitting
-  the data set into a training, validation and test set.
+  The raw video clips and manual annotation of location labels, had to be
+  pre-processed before they could be used for training deep learning models.
 
   The video footage was resized to a resolution of 224x224 pixels, which is the
   input resolution of most modern foundation models for image and video
@@ -283,56 +312,294 @@
   total data amount significantly, which allowed for less disk usage and faster
   loads into memory during training.
 
-  With a similar intention, the video was downsampled to a lower frame rate
-  (between 1-5 FPS) to decrease the total data amount. It was hypothesised that
-  because of the strong local dependency of consecutive frames, machine learning
-  models would heavily overfit to the training footage. Empirical experiments
-  confirmed that downsampling indeed reduces the over-fitting, and thus improve
-  the robustness of the model against unseen data. The lower frame rate was
-  therefore adopted for all further experiments.
+  Next, instead of extracting all 30 frames per second, the video footage was
+  downsampled to a much lower frame rate of 1 FPS. This was done to reduce the
+  total data amount, and to reduce over-fitting of the model to the training
+  data. It was hypothesised, that because of the strong local dependency of
+  consecutive frames, consecutive frames are highly correlated, thus including
+  such frames does not introduce any additional variance, but redundancies that
+  are harmful for the model's generalisation ability. Empirical experiments
+  confirmed that downsampling indeed reduces over-fitting, and was therefore
+  adopted across all experiments.
 
-  Lastly, the video footage was split into a training, validation and test set,
-  based on the date, on which the video footage was recorded. The training set
-  only consists of data that was recorded on single days (February \nth{22} 2023
-  for the Ground Floor and March \nth{3} 2023 for the First Floor), while the
-  validation and testing set consists of data that was recorded on multiple days
-  (spanning from \nth{9}-\nth{23} of March 2023). This was a deliberate choice,
-  in order to test whether an accurate model could be trained on only a single
-  day of footage and still be robust against video clips with vastly different
-  lighting conditions, temporal objects, and other factors that could affect the
-  model's performance.
+  Finally, the pre-processed video footage was aligned with the manual location
+  labels by extracting a frame per second from the video and matching it against
+  the location label that was active at that time. After pre-preprocessing,
+  there exist pairs $(x_i, y_i)$, where $x_i$ is pre-processed, extracted frame
+  of size 224x224 pixels, and $y_i$ is the corresponding location identifier.
+  The frames were stored in a way that allowed for easily sampling both a random
+  frame-location pair $(x_i, y_i)$ for image classification models, or a
+  sequence of consecutive $n$ frames from a clip $([x_0, \ldots, x_n], [y_i,
+  \ldots y_n])$ for video classification models. Here the sequence of frames was
+  represented as a 4D-tensor of size $n \times 3 \times 224 \times 224$.
 
-  Some examples of frame-location label pairs after preprocessing are shown in
-  Figure~\ref{fig:preprocessed-data}.
+  Figure~\ref{fig:preprocessed-data} shows $n=4$ consecutive frame-location
+  label pairs after preprocessing. As can be seen, even at a frame rate of 1
+  FPS, neighbouring frames are still similar to each other. Further, the
+  annotation at the transition from one location to another was often difficult
+  to determine, as one could annotate strictly according to the device position
+  or the view of the camera. This likely resulted in some frames being annotated
+  with the wrong location label.
 
   % figure
   \begin{figure}[ht]
     \centering
-    \includegraphics[width=\linewidth]{figures/preprocessed-data.jpg}
+    \includegraphics[width=\linewidth]{figures/data-example-batch.jpg}
     \caption{Examples of preprocessed frame-location pairs}
     \label{fig:preprocessed-data}
   \end{figure}
+
+  % TODO: frame preprocessing: tofloat(), normalisation, standardisation
   
   % subsection data-preprocessing (end)
 
   \subsection{Models} % (fold)
   \label{sub:models}
 
-  The project uses a fine-tuning approach to train various deep learning model for
-  the task of indoor localisation. The fine-tuning approach is a common
-  technique in machine learning, where a pre-trained model is used as a starting
-  point for training a new model. The pre-trained model is usually trained on a
-  large data set, such as ImageNet, and is therefore
-  already capable of extracting useful features from images. The pre-trained
-  model is then fine-tuned on a smaller data set, which is specific to the
-  problem at hand. This approach is advantageous because it allows for the
-  training of a model with a relatively small data set, while still achieving
-  good performance.
+  A deep learning model is supposed to learn a function $f: X \rightarrow Y$,
+  where $X$ represents the input space and $Y$ the output space. By having
+  framed the task of indoor localisation as a classification problem, the output
+  space is the discrete set of location labels, $Y = \{l_1, \ldots, l_n\}$.
+  Two approaches are viable for the input space $X$:
+
+  \begin{enumerate}
+
+    \item \textbf{Image Classification}: The input space $X$ is a single frame,
+      $(3, H, W)$ and the output space is a single location label $y \in Y$.
+      The model treats consecutive frames independently, and
+      therefore disregards the temporal dimension of the video.
+
+    \item \textbf{Video Classification}: The input space $X$ is a sequence of
+      $N$ frames, $(x_1, \ldots, x_n)$, and the output space $Y$ is a sequence
+      of $N$ location labels, $(y_0, \ldots, y_n)$, where each $y_i \in Y$. The
+      model considers the temporal dimension of the video, and learns to
+      classify the location label of a sequence of frames. In reality, the input
+      sequence has a maximum context length $K$, meaning that the model
+      continuously predicts on the previous $K$ frames.
+
+  \end{enumerate}
+
+  % explain that what CNN architecture is 
+  % explain that what RNN architecture is
+  % dominate computer vision tasks and are therefore used here
+  % introduce notion of cnn module (any module that takes a single frame and
+  % outputs a high-level feature representation) and rnn module (any module that
+  % is capable of taking a sequence of frames and outputs a high-level feature
+  % representation for each of them)
+
+  % explain why video classifiers and transformers are disregarded
+
+  \begin{figure}[ht]
+    \centering
+    \begin{subfigure}[b]{0.42\linewidth}
+      \centering
+      \includegraphics[width=\linewidth]{figures/cnn-architecture.png}
+      \caption{Image Classification Architecture}
+      \label{fig:cnn-architecture}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.42\linewidth}
+      \centering
+      \includegraphics[width=\linewidth]{figures/rnn-architecture.png}
+      \caption{Video Classification Architecture}
+      \label{fig:rnn-architecture}
+    \end{subfigure}
+    \caption{Model Architectures}
+    \label{fig:model-architectures}
+  \end{figure}
+
+  Figure~\ref{fig:model-architectures} shows the high-level architecture of the two
+  approaches. For an image classification model, a sequence of $N$ (here $N=4$)
+  frames are independently fed into a convolutional neural network (CNN), which
+  outputs a feature vector for each frame. CNNs are a class of deep neural
+  networks that are applied to analyse visual imagery. They are composed of
+  several layers of alternating convolutional and pooling filters, which are
+  applied to the input image to extract high-level feature representations.
+  These high-level feature representations are then fed into a fully connected
+  neural network (FCNN), which outputs a probability distribution over the
+  location labels.
+
+  For a video classification model, all $N$ consecutive frames are independently
+  passed through a CNN module. The sequence of high-level feature
+  representations is then fed into a recurrent neural network (RNN), which
+  outputs a probability distribution over the location labels for each frame by
+  placing a fully connected layer (classification head) to the output vector
+  associated to each frame in the RNN module. A recurrent neural network (RNN)
+  is a class of deep neural networks that is applied to analyse sequential data.
+  Although they are mostly applied to natural language processing tasks, the
+  generality of their architecture allows to also apply them to computer vision
+  tasks with sequential data, such as a sequence of frames in video
+  classification. For each input $x_i$ in a sequence of inputs, the RNN computes
+  an output as a function of the current input $x_i$ and a hidden state
+  $h_{i-1}$ that is computed as a function of all previous inputs. In that way,
+  the RNN can learn to model the temporal dependencies between frames, e.g.
+  consider that all previous frames were predicted to be at one specific
+  location, and therefore the current frame is also likely to be at that
+  location.
+
+  To evaluate the performance of both approaches, a selection of well-performing
+  CNN and RNN modules were chosen, and combined to form different image and
+  video classifiers. The modules, alongside meta information about their number
+  of parameters, size in Megabyte (MB) and GFLOPS (Giga Floating Point
+  Operations per Second) are provided in Table~\ref{tab:modules}. Generally
+  speaking, smaller model sizes are preferred, as they are faster to train and
+  during inference and require less memory, making them more suitable to be
+  deployed on low-resource devices like mobile phones and embedded devices. It
+  is expected that more complex, larger models will perform better, so the goal
+  is to choose the smallest model that works well enough to perform the task
+  with sufficient accuracy.
+
+  \begin{table}[ht]
+    \centering
+    \begin{tabular}{rllll}
+      \toprule
+      Type & Name & \#Params & GFLOPS & Size (MB) \\
+      \midrule
+      \textbf{CNN Module} & Resnet18~\cite{resnet} & 11.6M & 1.81 & 44.7 \\
+                          & Resnet50~\cite{resnet} & 25.6M & 4.09 & 99.8 \\
+                          & MobileNet-V3 & 2.5M & 0.06 & 9.8 \\
+                          & Alexnet & 61.1M & 0.71 & 233.1 \\
+      \midrule
+      \textbf{RNN Module} & RNN & 0.26 & N/A & 1.04 \\
+                          & LSTM & 1.05 & N/A & 4.2 \\
+      \bottomrule
+    \end{tabular}
+    \caption{CNN and RNN Modules}
+    \label{tab:modules}
+  \end{table}
+
+  By replacing the final fully connected layer of the CNN with a linear layer
+  with $N$ outputs, where $N$ is the number of location labels, each CNN module
+  can be used as an image classifier. Because the different RNN modules expect a
+  one-dimensional input for each element in the input sequence of frames, the
+  RNN modules are combined with a CNN module to form a CNN-RNN architecture.
+  Given the 4 different CNN modules and the 2 different RNN modules, 8 different
+  CNN-RNN architectures were formed for the video classification approach. The
+  list of all image and video classifiers that were evaluated is provided in
+  Table~\ref{tab:models}.
+
+
+  \begin{table}[ht]
+    \centering
+    \begin{tabular}{lll}
+      \toprule
+      \bfseries Name & \bfseries CNN Module & \bfseries RNN Module \\
+      \midrule
+      resnet18 & ResNet18 & - \\
+      resnet50 & ResNet50 & - \\
+      mobilenet\_v3\_small & MobileNet-V3 & - \\
+      alexnet & AlexNet & - \\
+      \midrule
+      resnet18-rnn & Resnet18 & RNN \\
+      resnet50-rnn & ResNet50 & RNN \\
+      mobilenet\_v3\_small-rnn & MobileNet-V3 & RNN \\
+      alexnet-rnn & AlexNet & RNN \\
+      resnet18-lstm & Resnet18 & LSTM \\
+      resnet50-lstm & ResNet50 & LSTM \\
+      mobilenet\_v3\_small-lstm & MobileNet-V3 & LSTM \\
+      alexnet-lstm & AlexNet & LSTM \\
+      \bottomrule
+    \end{tabular}
+    \caption{List of all Models}
+    \label{tab:models}
+  \end{table}
 
   % subsection models (end)
 
-  \subsection{Experiment Setup} % (fold)
-  \label{sub:experiment-setup}
+  \subsection{Training} % (fold)
+  \label{sub:training}
+
+  All models were implemented using the PyTorch framework~\cite{pytorch} and the
+  training was performed locally on a MacBook Pro M1 with 16GB of memory and
+  MPS-acceleration enabled (where possible\footnote{MobileNet-V3-based models do
+  not support GPU acceleration}) to allow for fast experiment iteration. The
+  loss function $\mathcal{L}$ used for all models was cross-entropy loss
+  (Equation~\ref{eq:cross-entropy}), which
+  is a standard loss function for multi-class classification problems.
+
+  \begin{equation}
+    \mathcal{L}(\hat{y},y) = -\sum_{i=1}^{K} y_i \log(\hat{y}_i)
+    \label{eq:cross-entropy}
+  \end{equation}
+
+  % TODO: compare to pytorch cross-entropy loss (is it the same? what is the
+  % difference to nll?)
+  Here, $\hat{y}$ is the predicted probability distribution over the $K$ classes
+  and $y$ is the one-hot encoded ground truth label. The models were trained
+  using the AdamW~\cite{adamw} optimiser with default parameters, except for the
+  learning rate, which was set to a constant of $1e^{-4}$. Step-wise learning
+  rate scheduling was used for all models, which reduced the learning rate by a
+  factor of 10 every 5 epochs. The batch size was set to 32 for all image
+  classifiers and 8 for all video classifiers for memory-optimal training.
+  Unless otherwise specified, all image and video classifiers were trained with
+  the same set of training hyper-parameters, which are specified in Table
+  \ref{tab:default-hyperparams}. 
+
+  \begin{table}[ht]
+    \centering
+    \begin{tabular}{rllll}
+      \toprule
+      Classifier & Batch Size & Epochs & Optimiser & Learning Rate Scheduler \\
+      \midrule
+      \bfseries Image Classifier & 32 & 10 & AdamW ($\gamma=1e^{-4}$) & Step-LR
+      ($\gamma=1e^{-1}, s=5$) \\
+      \bfseries Video Classifier & 8 & 10 & AdamW ($\gamma=1e^{-4}$) & Step-LR
+      ($\gamma=1e^{-1}, s=5$) \\
+      \bottomrule
+    \end{tabular}
+    \caption{Default Hyperparameters for Image and Video Classifiers}
+    \label{tab:default-hyperparams}
+  \end{table}
+
+  %   (end)
+
+  \subsection{Evaluation} % (fold)
+  \label{sub:evaluation}
+
+  Goal: Evaluate accuracy, robustness, and efficiency of the models.
+
+  Quantitatively: 
+  The performance of the models was evaluated using the following metrics:
+
+  \begin{enumerate}
+    \item \textbf{Accuracy} is the number of correct predictions divided by the
+      total number of predictions. This is a standard metric for classification
+      problems and is used to evaluate the performance of the models.
+    \item \textbf{F1-Score} is the harmonic mean of precision and recall. This
+      metric is used to evaluate the performance of the models on the
+      multi-class classification problem.
+    \item \textbf{Top-$K$ Accuracy} is the number of correct predictions in the
+      top-$K$ predictions divided by the total number of predictions. This
+      metric is used to evaluate the performance of the models on the
+      multi-class classification problem.
+    \item \textbf{Inference Time} is the time taken to perform a single
+      prediction on a single image or video. This metric is used to evaluate the
+      performance of the models on the inference time problem.
+    \item \textbf{Model Size} is the size of the model in megabytes. This metric
+      is used to evaluate the performance of the models on the model size
+      problem.
+  \end{enumerate}
+
+  Qualitatively: 
+  The performance of the models was also evaluated qualitatively by inspecting
+  the predictions of the models on a set of test images and videos. This was
+  done to assess the quality of the predictions and to identify any potential
+  issues with the models.
+
+  \begin{enumerate}
+    \item Look at the predictions of the models on a set of test images and
+      videos. This is done to assess the quality of the predictions and to
+      identify any potential issues with the models.
+    \item Look at the predictions of the models on a set of test images and
+      videos. This is done to assess the quality of the predictions and to
+      identify any potential issues with the models.
+  \end{enumerate}
+
+  
+  % subsection evaluation (end)
+
+  \section{Experiment Setup} % (fold)
+  \label{sec:experiment-setup}
 
   Here I write something about the experiment setup, like the different
   research questions that I wish to answer and how I aim to test them. Each
@@ -345,11 +612,11 @@
     \item How does the model performance decrease when trained on smaller
       subsets of the data (This is important to assess how little the effort is
       to get a train an initial model that can be deployed)
-    \item How does the model performance decrease when trained on a single day
-      of data?
   \end{enumerate}
+
+  % TODO: describe the evaluation metrics
   
-  % subsection experiment-setup (end)
+  % section experiment-setup (end)
 
   % section methodology (end)
 
@@ -367,6 +634,20 @@
   \label{sec:conclusion}
 
   % section conclusion (end)
+
+  \section{Remarks} % (fold)
+  \label{sec:remarks}
+
+  All code and data used in this project is available on GitHub at the
+  following link: \url{https://github.com/mikasenghaas/bsc}. The project's 
+  \texttt{README} file contains detailed instructions on how to reproduce the
+  results of this project.
+
+  Further, the precise configuration and results of the experiments that are
+  reported here are publicly available on the Weights \& Biases platform at the
+  following link: \url{https://wandb.ai/mikasenghaas/bsc}.
+
+  % section remarks (end)
 
   % bibliography
   \newpage
