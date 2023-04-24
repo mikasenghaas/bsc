@@ -80,7 +80,7 @@ class BaseClassifier(nn.Module):
                 model.classifier[6] = nn.Linear(
                     model.classifier[6].in_features, num_classes
                 )
-            case "mobilenet-v3-small":
+            case "mobilenet_v3_small":
                 model = mobilenet_v3_small()
                 model.classifier[3] = nn.Linear(
                     model.classifier[3].in_features, num_classes
