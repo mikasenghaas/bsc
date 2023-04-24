@@ -541,9 +541,9 @@
       \toprule
       Classifier & Batch Size & Epochs & Optimiser & Learning Rate Scheduler \\
       \midrule
-      \bfseries Image Classifier & 32 & 10 & AdamW ($\gamma=1e^{-4}$) & Step-LR
+      \bfseries Image & 32 & 10 & AdamW ($\gamma=1e^{-4}$) & Step-LR
       ($\gamma=1e^{-1}, s=5$) \\
-      \bfseries Video Classifier & 8 & 10 & AdamW ($\gamma=1e^{-4}$) & Step-LR
+      \bfseries Video & 8 & 10 & AdamW ($\gamma=1e^{-4}$) & Step-LR
       ($\gamma=1e^{-1}, s=5$) \\
       \bottomrule
     \end{tabular}
@@ -697,6 +697,41 @@
 
   \subsection{Best Model} % (fold)
 
+
+  \begin{table}[ht]
+    \centering
+    \begin{tabular}{clllllll}
+      \toprule
+      & \multirow{2}{*}{\textbf{Model}} 
+      & \textbf{1-Acc.} & \textbf{3-Acc.}& \textbf{Ma.-F1} & \textbf{Par.} & \textbf{FLOPs} & \textbf{Throughput} \\
+      & & (\%) & (\%) & (\%) & (M) & (G) & (Preds/s) \\
+      \midrule
+    \multirow{4}{*}{\rotatebox[origin=c]{90}{Image}} &
+        \texttt{alexnet} & 60.15 & 84.42 & 55.95 & 57.09 & 0.71 & \bfseries
+        87.31 ($\pm$ 1.15) \\
+      & \texttt{resnet18} & 71.39 & 91.70 & \bfseries 68.29 & 11.19 & 1.82 &
+      64.12 ($\pm$ 1.90) \\
+      & \texttt{resnet50} & 58.37 & 82.63 & 55.92 & 23.55 & 4.12 & 27.57 ($\pm$ 1.10) \\
+      & \texttt{mobilenet\_v3} & 29.37 & 64.11 & 14.87 & 1.54 & 0.06 &
+      16.49 ($\pm$ 1.44) \\
+
+      \midrule
+
+      \multirow{4}{*}{\rotatebox[origin=c]{90}{Video}}
+      & \texttt{alexnet-lstm} & 32.60 & 62.19 & 9.95 & \bfseries 58.58 & 3.57 &
+      38.31 ($\pm$ 0.53) \\
+      & \texttt{alexnet-rnn} & 50.00 & 78.90 & 35.71 & 58.19 & 3.56 & 39.09
+      ($\pm$ 0.51) \\
+      & \texttt{resnet18-lstm} & \bfseries 72.19 & 91.78 & 64.59 & 11.84 &
+        \bfseries 9.11 & 19.66 ($\pm$ 0.40) \\
+      & \texttt{resnet18-rnn} & 70.14 & \bfseries 93.97 & 66.62 & 11.44 & 9.11 &
+      19.07 ($\pm$ 0.56) \\
+
+      \bottomrule
+    \end{tabular}
+    \caption{Results of Experiment 1}
+    \label{tab:results-experiment1}
+  \end{table}
 
   % section Results (end)
 
