@@ -235,9 +235,9 @@ class VideoClassifier(BaseClassifier):
         # rnn module
         self.rnn_module = self.get_rnn_module(
                 rnn_module, 
-                input_size=256, 
-                hidden_size=256, 
-                num_layers=2)
+                input_size=256,
+                hidden_size=256,
+                num_layers=1)
 
         # classifier
         self.fc = nn.Linear(256, self.num_classes)
