@@ -25,7 +25,6 @@ from utils import (
     save_json,
     save_pickle,
     start_task,
-    unnormalise_image,
 )
 
 
@@ -65,6 +64,15 @@ def train(
     train_acc, val_acc = 0.0, 0.0
     best_train_acc, best_val_acc = 0.0, 0.0
     training_times = []
+
+    # compute total number of samples
+    train_data = train_loader.dataset
+    if type(train_data) == ImageDataset:
+        total_samples = len(train_data)
+    elif type(train_data) == VideoDataset:
+        total_samples = sum([len(clip) for clip in train_data.data])
+    else:
+        raise ValueError("Unknown dataset type")
 
     # put model on device
     model.to(args.device)
@@ -142,8 +150,9 @@ def train(
             if args.wandb_log:
                 wandb.log(
                     {
-                        "training_accuracy": train_acc,
-                        "training_loss": train_loss,
+                        "samples_seen": epoch * total_samples + samples_seen,
+                        "train/acc": train_acc,
+                        "train/loss": train_loss,
                     }
                 )
 
@@ -208,8 +217,8 @@ def train(
             if args.wandb_log:
                 wandb.log(
                     {
-                        "validation_accuracy": val_acc,
-                        "validation_loss": val_loss,
+                        "val/acc": val_acc,
+                        "val/loss": val_loss,
                     }
                 )
 
@@ -223,9 +232,8 @@ def train(
     if args.wandb_log:
         wandb.summary.update(
             {
-                "training_time_per_sample_ms": training_time_per_sample_ms,
-                "best_training_accuracy": best_train_acc,
-                "best_validation_accuracy": best_val_acc,
+                "train/best_acc": best_train_acc,
+                "val/best_acc": best_val_acc,
             }
         )
 
@@ -248,6 +256,12 @@ def main():
             tags=args.wandb_tags if args.wandb_tags else None,
             config=vars(args),
         )
+
+        # set custom x axis for logging
+        wandb.define_metric("samples_seen")
+        # set all train metrics to use this step
+        wandb.define_metric("train/*", step_metric="samples_seen")
+        wandb.define_metric("val/*", step_metric="samples_seen")
 
     # load data
     start_task("Initialising Data and Model")
@@ -298,7 +312,7 @@ def main():
 
     # define loss, optimiser and lr scheduler
     criterion = nn.CrossEntropyLoss()  # pyright: ignore
-    optim = torch.optim.Adam(model.parameters(), lr=args.lr)
+    optim = torch.optim.AdamW(model.parameters(), lr=args.lr)
     scheduler = torch.optim.lr_scheduler.StepLR(optim, args.step_size, args.gamma)
 
     # train model
