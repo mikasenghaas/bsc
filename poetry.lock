@@ -929,6 +929,17 @@ requests-oauthlib = ">=0.7.0"
 tool = ["click (>=6.0.0)"]
 
 [[package]]
+name = "gputil"
+version = "1.4.0"
+description = "GPUtil is a Python module for getting the GPU status from NVIDA GPUs using nvidia-smi."
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "GPUtil-1.4.0.tar.gz", hash = "sha256:099e52c65e512cdfa8c8763fca67f5a5c2afb63469602d5dcb4d296b3661efb9"},
+]
+
+[[package]]
 name = "grad-cam"
 version = "1.4.6"
 description = "Many Class Activation Map methods implemented in Pytorch for classification, segmentation, object detection and more"
@@ -2553,6 +2564,20 @@ files = [
 test = ["enum34", "ipaddress", "mock", "pywin32", "wmi"]
 
 [[package]]
+name = "ptflops"
+version = "0.6.9"
+description = "Flops counter for convolutional networks inpytorch framework"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "ptflops-0.6.9.tar.gz", hash = "sha256:95423006d7520eff5cc2fcbbd149329d39d81c9bff361c9b3b13bfbd5d1efe75"},
+]
+
+[package.dependencies]
+torch = "*"
+
+[[package]]
 name = "ptyprocess"
 version = "0.7.0"
 description = "Run a subprocess in a pseudo terminal"
@@ -2578,6 +2603,18 @@ files = [
 
 [package.extras]
 tests = ["pytest"]
+
+[[package]]
+name = "py-cpuinfo"
+version = "9.0.0"
+description = "Get CPU info with pure Python"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "py-cpuinfo-9.0.0.tar.gz", hash = "sha256:3cdbbf3fac90dc6f118bfd64384f309edeadd902d7c8fb17f02ffa1fc3f49690"},
+    {file = "py_cpuinfo-9.0.0-py3-none-any.whl", hash = "sha256:859625bc251f64e21f077d099d4162689c762b5d6a4c3c97553d56241c9674d5"},
+]
 
 [[package]]
 name = "pyasn1"
@@ -2727,6 +2764,33 @@ files = [
     {file = "python-json-logger-2.0.7.tar.gz", hash = "sha256:23e7ec02d34237c5aa1e29a070193a4ea87583bb4e7f8fd06d3de8264c4b2e1c"},
     {file = "python_json_logger-2.0.7-py3-none-any.whl", hash = "sha256:f380b826a991ebbe3de4d897aeec42760035ac760345e57b812938dc8b35e2bd"},
 ]
+
+[[package]]
+name = "pytorch-benchmark"
+version = "0.3.4"
+description = "Easily benchmark PyTorch model FLOPs, latency, throughput, max allocated memory and energy consumption in one go."
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pytorch-benchmark-0.3.4.tar.gz", hash = "sha256:f46e48672984f91a2274cfbc4006d39d0f87880be03110c93d046d16200b851c"},
+    {file = "pytorch_benchmark-0.3.4-py3-none-any.whl", hash = "sha256:e5bc56e5d1246e22e80eaf614b1b56130580e46ece0fe23d259da206516d5bfd"},
+]
+
+[package.dependencies]
+gputil = ">=1.4"
+numpy = "*"
+psutil = ">=5.9"
+ptflops = ">=0.6.8,<0.7.0"
+py-cpuinfo = ">=7.0"
+pyyaml = ">=6.0"
+torch = ">=1.6"
+tqdm = ">=4.62,<5.0"
+
+[package.extras]
+build = ["setuptools", "twine", "wheel"]
+dev = ["black", "flake8", "flake8-black", "isort (>=5.7)", "numpy", "ptflops (>=0.6)", "pytest (>=6.0,<7.0)", "pytest-cov", "torchvision"]
+docs = ["docutils (>=0.16)", "m2r2 (>=0.2)", "nbsphinx (>=0.8)", "pandoc (>=1.0)", "sphinx (>=3.0)", "sphinx-autoapi (>=1.7)", "sphinx-autodoc-typehints (>=1.0)", "sphinx-copybutton (>=0.3)", "sphinx-paramlinks (>=0.4.0)", "sphinx-togglebutton (>=0.2)", "sphinxcontrib-fulltoc (>=1.0)", "sphinxcontrib-mockautodoc"]
 
 [[package]]
 name = "pytz"
@@ -4026,4 +4090,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "3.10.*"
-content-hash = "74e9143c831248d1537ddc4249bf0d0cac957acf1b7790c11980c21af95c6bcc"
+content-hash = "d99a6e344eb3c0da4145d32220df563c16145b5caecd789c56d1a182e9f70a4a"

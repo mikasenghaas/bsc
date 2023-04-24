@@ -1,18 +1,17 @@
 # eval.py
 #  by: mika senghaas
 
-import glob
 import os
-import random
+import re
 import warnings
 from timeit import default_timer
 
 import torch
-import numpy as np
 from tqdm import tqdm
 from torch.nn.functional import softmax
 from torch.utils.data import DataLoader
 import torcheval.metrics.functional as metrics
+from pytorch_benchmark import benchmark
 
 import wandb
 from config import IMAGE_CLASSIFIERS, VIDEO_CLASSIFIERS, BASEPATH, RAW_DATA_PATH, DEVICE, BATCH_SIZE
@@ -67,13 +66,15 @@ def main():
     transform = load_pickle(transforms_path)
     config = load_json(config_path)
     if args.model in IMAGE_CLASSIFIERS:
+        batch_size = 32
         model = ImageClassifier(**config)
         test_data = ImageDataset(**ImageDataset.default_config())
-        test_loader = DataLoader(test_data, batch_size=32, shuffle=False)
+        test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
     elif args.model in VIDEO_CLASSIFIERS:
+        batch_size = 8
         model = VideoClassifier(**config)
         test_data = VideoDataset(**VideoDataset.default_config())
-        test_loader = DataLoader(test_data, batch_size=8, shuffle=False)
+        test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
     else:
         raise Exception(f"Model {args.model} is not implemented")
 
@@ -82,7 +83,6 @@ def main():
 
     # get id2class and run id
     id2class = {int(i): c for i, c in config["id2class"].items()}
-    class2id = {c: int(i) for i, c in config["class2id"].items()}
     num_classes = len(id2class)
     run_id = config["run_id"]
 
@@ -90,15 +90,22 @@ def main():
     start_task(f"Recognised WANB Run ID: {run_id}")
     run = api.run(f"mikasenghaas/bsc/{run_id}")
 
-    if run.summary.get("evaluated"):
-        start_task("Model has already been evaluated")
-        end_task("src/eval.py", start)
-        return
-
     # set eval mode
     model.eval()
+    model.to("cpu")
     y_true, y_pred, y_probs = [], [], []
     samples_seen, running_time = 0, 0.0
+
+    # benchmark model inference (FLOPs, latency, throughput, memory and energy consumption) on CPU
+    start_task("Benchmarking model")
+    sample, _ = next(iter(test_loader))
+    bm = benchmark(model, transform(sample.to("cpu")), num_runs=10)
+
+    benchmark_metrics = {
+        "num_params": bm["params"],
+        **{re.sub("batches", "samples", k): v for k, v in bm["timing"]["batch_size_1"]["on_device_inference"]["metrics"].items()},
+        **bm["timing"][f"batch_size_{batch_size}"]["on_device_inference"]["metrics"],
+    }
 
     start_task("Predicting on test split")
     for inputs, labels in tqdm(test_loader):
@@ -108,9 +115,7 @@ def main():
             labels.to(DEVICE)
 
             # forward pass
-            s = default_timer()
             logits = model(transform(inputs))
-            running_time = default_timer() - s
 
             # reshape logits
             if logits.ndim == 3:
@@ -131,41 +136,40 @@ def main():
             y_pred = y_pred + preds.tolist()
             y_true = y_true + labels.tolist()
 
+
+    start_task("Computing performance metrics")
     # convert to torch tensors
     y_probs = torch.tensor(y_probs)
     y_pred = torch.tensor(y_pred)
     y_true = torch.tensor(y_true)
 
     # compute multiclass accuracy
-    micro_acc = metrics.multiclass_accuracy(y_pred, y_true, average="micro")
-    macro_acc = metrics.multiclass_accuracy(y_pred, y_true, average="macro", num_classes=num_classes)
+    top1_acc = metrics.multiclass_accuracy(y_pred, y_true, k=1)
+    top3_acc = metrics.multiclass_accuracy(y_probs, y_true, k=3)
 
     # compute f1 score
-    micro_f1 = metrics.multiclass_f1_score(y_pred, y_true, average="micro")
     macro_f1 = metrics.multiclass_f1_score(y_pred, y_true, average="macro", num_classes=num_classes)
 
     # conf_matrix
     conf_matrix = metrics.multiclass_confusion_matrix(y_pred, y_true, num_classes=num_classes)
-
-    # hit rate
-    hit_rate = metrics.hit_rate(y_probs, y_true, k=3).mean()
 
     # inference time
     inference_time_per_sample_ms = round(running_time / samples_seen * 1000, 2)
 
     # create dict with metrics
     eval_metrics = {
-        "test_micro_acc": micro_acc.item(),
-        "test_macro_acc": macro_acc.item(),
-        "test_micro_f1": micro_f1.item(),
+        "test_top1_acc": top1_acc.item(),
+        "test_top3_acc": top3_acc.item(),
         "test_macro_f1": macro_f1.item(),
-        "test_hit_rate": hit_rate.item(),
         "test_conf_matrix": conf_matrix.tolist(),
-        "inference_time_per_sample_ms": inference_time_per_sample_ms
         }
 
+    # merge dicts with metrics
+    all_metrics = {**benchmark_metrics, **eval_metrics}
+
     # log metrics to wandb
-    run.summary.update(eval_metrics)
+    start_task("Syncing to WANDB")
+    run.summary.update(all_metrics)
     run.summary.update({"evaluated": True})
 
     # end src/infer.py
