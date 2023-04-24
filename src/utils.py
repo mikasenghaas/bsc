@@ -572,6 +572,8 @@ def show_images(
             )  # pyright: ignore
     plt.show()
 
+    return fig
+
 
 def show_video(
     video_tensor: torch.Tensor,
