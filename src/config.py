@@ -75,8 +75,8 @@ STD: torch.Tensor = torch.tensor([0.229, 0.224, 0.225])
 MAX_EPOCHS: int = 10
 BATCH_SIZE: int = 32
 LR: float = 1e-4
-STEP_SIZE: int = 5
-GAMMA: float = 0.1
+STEP_SIZE: int = 10
+GAMMA: float = 1e-1
 LOG: bool = False
 
 # MODEL
