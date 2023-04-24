@@ -103,6 +103,7 @@ def main():
 
     benchmark_metrics = {
         "num_params": bm["params"],
+        "flops": bm["flops"],
         **{re.sub("batches", "samples", k): v for k, v in bm["timing"]["batch_size_1"]["on_device_inference"]["metrics"].items()},
         **bm["timing"][f"batch_size_{batch_size}"]["on_device_inference"]["metrics"],
     }
