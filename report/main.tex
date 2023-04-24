@@ -1,9 +1,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% Define Article %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass{article}
+\documentclass[a4paper]{article}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% Using Packages %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage[margin=1in]{geometry}
+\usepackage{geometry}
 \usepackage{graphicx}
 \usepackage{amssymb}
 \usepackage{amsmath}
@@ -17,8 +17,8 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{url}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+\usepackage{array}
+\usepackage{multirow}
 %%%%%%%%%%%%%%%%%%%%%%%%%% Page Setting %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \geometry{a4paper}
 
@@ -556,87 +556,165 @@
   \subsection{Evaluation} % (fold)
   \label{sub:evaluation}
 
-  Goal: Evaluate accuracy, robustness, and efficiency of the models.
+  The goal of the evaluation is to have a rigorous comparison of the different
+  models and to determine the best model for the task of location
+  classification. In this context, a ``well-performing'' model is not just the
+  model that is most accurate in most cases, but also the model that is most
+  robust to a wide-range of different natural variations that can occur and that
+  is efficient. To achieve this, a series of \textit{quantitative} and
+  \textit{qualitative} experiments are performed on the models, which are then
+  used in Section~\ref{sec:results} and Section~\ref{sec:discussion}.
 
-  Quantitatively: 
-  The performance of the models was evaluated using the following metrics:
+  \textbf{Quantitative Experiments.} To quantitatively assess the performance of
+  the model on the task of location classification, the models were evaluated on
+  the test set using a wide-range of different performance metrics. To assess
+  the overall accuracy of the model, two metrics are computed:
+  \textbf{Multi-class Accuracy} (Equation~\ref{eq:accuracy}) is the most
+  wide-spread performance metric in classification task and is defined as the
+  number of correct predictions divided by the total number of predictions.
+  It gives a good first indication for the overall performance of the model, but
+  can be misleading in cases where the dataset is imbalanced.
 
-  \begin{enumerate}
-    \item \textbf{Accuracy} is the number of correct predictions divided by the
-      total number of predictions. This is a standard metric for classification
-      problems and is used to evaluate the performance of the models.
-    \item \textbf{F1-Score} is the harmonic mean of precision and recall. This
-      metric is used to evaluate the performance of the models on the
-      multi-class classification problem.
-    \item \textbf{Top-$K$ Accuracy} is the number of correct predictions in the
-      top-$K$ predictions divided by the total number of predictions. This
-      metric is used to evaluate the performance of the models on the
-      multi-class classification problem.
-    \item \textbf{Inference Time} is the time taken to perform a single
-      prediction on a single image or video. This metric is used to evaluate the
-      performance of the models on the inference time problem.
-    \item \textbf{Model Size} is the size of the model in megabytes. This metric
-      is used to evaluate the performance of the models on the model size
-      problem.
-  \end{enumerate}
+  \begin{equation}
+    \text{Multi-class Accuracy} = \frac{1}{N} \sum_{i=1}^{N} \mathbb{I}(y_i =
+    \hat{y}_i) 
+    \label{eq:accuracy}
+  \end{equation}
 
-  Qualitatively: 
-  The performance of the models was also evaluated qualitatively by inspecting
-  the predictions of the models on a set of test images and videos. This was
-  done to assess the quality of the predictions and to identify any potential
-  issues with the models.
+  Here, $\mathbb{I}$ is an indicator that is 1 if the condition is true and 0
+  otherwise. On top of the standard, multi-class accuracy, a variant of the
+  formula, the \textbf{Top-3 Multi-class Accuracy} is also computed, which
+  counts a prediction as correct if the correct label is one of the top-3
+  predicted labels.
 
-  \begin{enumerate}
-    \item Look at the predictions of the models on a set of test images and
-      videos. This is done to assess the quality of the predictions and to
-      identify any potential issues with the models.
-    \item Look at the predictions of the models on a set of test images and
-      videos. This is done to assess the quality of the predictions and to
-      identify any potential issues with the models.
-  \end{enumerate}
+  As some location labels are underrepresented in the dataset due to the natural
+  variation in size of the different locations, the \textbf{Macro F1-Score} is
+  used to compute a more fine-grained metric. The Macro F1-Score is the average
+  of the class-specific F1-scores, which are defined as the harmonic mean of
+  precision $P_i$ and recall $R_i$ (Equation~\ref{eq:macro-f1}).
 
-  
+  \begin{equation}
+    \text{Macro F1-Score} = \frac{1}{N} \sum_{i=1}^{N} \frac{2 \cdot P_i \cdot 
+    R_i}{P_i + R_i}
+    \label{eq:macro-f1}
+  \end{equation}
+
+  Here, $P_i$ and $R_i$ are the precision and recall for class $i$, which are 
+  defined as follows (Equation~\ref{eq:precision}) and (Equation~\ref{eq:recall}).
+
+  \begin{equation}
+    P_i = \frac{TP_i}{TP_i + FP_i}
+    \label{eq:precision}
+  \end{equation}
+
+  \begin{equation}
+    R_i = \frac{TP_i}{TP_i + FN_i}
+    \label{eq:recall}
+  \end{equation}
+
+  Here, $TP_i$ is the number of true positives for class $i$, $FP_i$ is the
+  number of false positives for class $i$ and $FN_i$ is the number of false
+  negatives for class $i$. 
+
+  On top of the standard metrics for classification, efficiency of the model is
+  crucial for usability of the system on low-resource devices, such as mobile
+  phones. For this reason, the \textbf{Inference Time} per sample is measured, 
+  the \textbf{GFLOPS} per predicted sample is computed and the \textbf{Model
+  Size} is measured to assess the memory constraints imposed by the model.
+
+  \textbf{Qualitative Experiments.} Purely quantitatively assessing a model's
+  performance may not be sufficient to truly determine the strengths and
+  weaknesses of the model. For this reason, the models were also evaluated
+  qualitatively by manually inspecting the misclassified samples and
+  the predictions of the models on a sub-set of $20$ test frames. 
+  Furthermore, the \texttt{GradCam}~\cite{gradcam} algorithm was used to gain 
+  insights into the internal functioning of the model. GradCam is a technique
+  that backtracks the activations in the convolutional filters of the model at
+  some depth in the model's architecture and through the gradients of the model
+  to the input image. This allows to visualise the regions of the image that
+  were most relevant for the model to make its prediction. In this scenario, it
+  is hoped that the highlighted regions can be used to understand what types of
+  features the model is looking for in the image and what types of features it
+  is not looking for. This can be used to identify potential issues with the
+  model and to gain insights into how the model can be improved.
+
   % subsection evaluation (end)
+
+  % section methodology (end)
 
   \section{Experiment Setup} % (fold)
   \label{sec:experiment-setup}
 
-  Here I write something about the experiment setup, like the different
-  research questions that I wish to answer and how I aim to test them. Each
-  should list precisely which models are trained, under which hyper-parameters,
-  and which metrics are used to evaluate the models.
+  \subsection{Best Model} % (fold)
+  \label{sub:best-odel}
 
-  \begin{enumerate}
-    \item Which model architecture performs best? (compare multiple different
-      models and test with a set of metrics)
-    \item How does the model performance decrease when trained on smaller
-      subsets of the data (This is important to assess how little the effort is
-      to get a train an initial model that can be deployed)
-  \end{enumerate}
+  The first experiment tries to find an answer for the research question:
+  \textit{ ``Which model architecture performs best?''}. To answer this
+  question, the models listed in Table~\ref{tab:models} are trained on the
+  same data with the same set of training hyper-parameters and then evaluated
+  as outlined in Section~\ref{sub:evaluation}.
 
-  % TODO: describe the evaluation metrics
-  
-  % section experiment-setup (end)
+  % subsection Best Model (end)
 
-  % section methodology (end)
+  \subsection{Data Efficiency} % (fold)
+  \label{sub:data-efficiency}
+
+  Approaching indoor localisation as a classification task, means to frame it as
+  a supervised learning problem. Supervised learning requires human-annotated
+  training data, which can be prohibitive to obtain in large quantities. For the
+  proposed approach to be valid, minimal effort in the initial data collection
+  and annotation should be required. For this reason, the second experiment
+  tries to find an answer for the research question: \textit{ ``How much data
+  is necessary to achieve good performance''}. To answer this question, a single
+  image and video classifier are chosen and trained on different subsets of the 
+  training data. The subsets include $10\%$, $20\%$, $30\%$, $40\%$, $50\%$,
+  $60\%$, $70\%$, $80\%$, $90\%$ and $100\%$ of the training data. The models 
+  are then evaluated as outlined in Section~\ref{sub:evaluation} to find the
+  natural drop-off in performance as the amount of training data decreases.
+
+  % subsection Data Efficiency (end)
+
+  \subsection{Problem Difficulty} % (fold)
+  \label{sub:problem-difficulty}
+
+  The proposed approach is only really valid if it scales well to larger indoor
+  spaces and if it can be used to localise a user in a large number of different
+  locations. For this reason, the third experiment tries to approximate the
+  performance to be expected when gradually increasing the number of locations
+  and thereby the complexity of the problem. To answer this question, a single
+  image and video classifier are chosen and trained on different subsets of the
+  training data that only include samples from a subset of the locations, which
+  are chosen at random. The models are then evaluated as outlined in
+  Section~\ref{sub:evaluation} to estimate how the performance decreases as the
+  number of locations increases.
+
+  % subsection Problem Difficulty (end)
+
+  % section Experiment Setup (end)
 
   \section{Results} % (fold)
   \label{sec:results}
 
-  % section results (end)
+  \subsection{Best Model} % (fold)
+
+
+  % section Results (end)
 
   \section{Discussion} % (fold)
   \label{sec:discussion}
 
-  % section conclusion (end)
+  % section Discussion (end)
 
   \section{Conclusion} % (fold)
   \label{sec:conclusion}
 
-  % section conclusion (end)
+  % section Conclusion (end)
 
   \section{Remarks} % (fold)
   \label{sec:remarks}
+
+  \subsection{Reproducibility} % (fold)
+  \label{sub:reproducibility}
 
   All code and data used in this project is available on GitHub at the
   following link: \url{https://github.com/mikasenghaas/bsc}. The project's 
@@ -646,6 +724,44 @@
   Further, the precise configuration and results of the experiments that are
   reported here are publicly available on the Weights \& Biases platform at the
   following link: \url{https://wandb.ai/mikasenghaas/bsc}.
+
+  % subsection reproducibility (end)
+
+  \subsection{Machine Specifications} % (fold)
+  \label{sub:machine-specs}
+
+  Table~\ref{tab:machine-specs} lists the specifications of the machine that was
+  used for training and evaluation of the models. For training the \texttt{MPS}
+  backend was used for accelerated training. However, for inference a single CPU
+  core was used, to approximate latency and throughput on mobile devices.
+
+  \begin{table}[ht]
+    \centering
+    \begin{tabular}{cll}
+     \toprule
+     & Specification & Value \\
+     \midrule
+
+     \multirow{2}{*}{System} & Name & Darwin \\
+     \vspace{0.1cm}
+     & Node & Local MacBook Pro \\
+
+     \multirow{4}{*}{CPU} & Model & Apple M1 \\
+     & Architecture & ARM64 \\
+     & Physical Cores & 8 \\
+     \vspace{0.1cm}
+     & Frequency & 2.4 GHz \\
+
+     \multirow{2}{*}{Memory} & Total Capacity & 16 GB \\
+     & Avg. Used Capacity & $\sim 7.4$ GB \\
+
+     \bottomrule
+    \end{tabular}
+    \caption{Machine Specifications}
+    \label{tab:machine-specs}
+  \end{table}
+  
+  % subsection subsection name (end)
 
   % section remarks (end)
 
