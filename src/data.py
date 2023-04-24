@@ -213,12 +213,14 @@ class VideoDataset(BaseDataset):
             for i in range(0, len(lst), n):
                 res.append(lst[i : i + n])
             return res[:-1]
+        
+        self.frames_per_clip = 5
 
         # partition frames in video in clips
         self.partioned_data = []
-        for video_id, frames_with_labels in self.data:
-            partioned_frames_with_labels = partition(frames_with_labels, 10)
-            for i, frames_with_labels in enumerate(partioned_frames_with_labels):
+        for _, frames_with_labels in self.data:
+            partioned_frames_with_labels = partition(frames_with_labels, self.frames_per_clip)
+            for  frames_with_labels in partioned_frames_with_labels:
                 self.partioned_data.append(frames_with_labels)
         self.data = self.partioned_data
 
