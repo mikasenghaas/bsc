@@ -697,6 +697,83 @@
 
   \subsection{Best Model} % (fold)
 
+  % figure
+  \begin{figure}[ht]
+    \centering
+    % subfigure
+    \begin{subfigure}[b]{0.49\linewidth}
+      \centering
+      \includegraphics[width=\linewidth]{figures/experiment1-train-loss.png}
+      \caption{Training Loss/ Samples}
+      \label{fig:experiment1-train-acc}
+    \end{subfigure}
+    \hfill
+    % subfigure
+    \begin{subfigure}[b]{0.49\linewidth}
+      \centering
+      \includegraphics[width=\linewidth]{figures/experiment1-train-acc.jpg}
+      \caption{Training Accuracy/ Samples}
+      \label{fig:experiment1-train-loss}
+    \end{subfigure}
+    \caption{Training Metrics for Experiment 1}
+    \label{fig:experiment-1-training}
+  \end{figure}
+
+  % encoding 
+  \begin{table}[ht]
+    \centering
+    \begin{tabular}{lc}
+    \toprule
+    \bfseries Class & \bfseries Encoding \\
+    \midrule
+    First\_Floor\_Corridor\_1 & A \\
+    First\_Floor\_Corridor\_2 & B \\
+    First\_Floor\_Green\_Area & C \\
+    First\_Floor\_Library\_1 & D \\
+    First\_Floor\_Library\_2 & E \\
+    First\_Floor\_Library\_3 & F \\
+    First\_Floor\_Magenta\_Area & G \\
+    First\_Floor\_Mezzanine & H \\
+    First\_Floor\_Red\_Area & I \\
+    First\_Floor\_Yellow\_Area & J \\
+    Ground\_Floor\_Atrium & K \\
+    Ground\_Floor\_Corridor\_1 & L \\
+    Ground\_Floor\_Corridor\_2 & M \\
+    Ground\_Floor\_Entrance\_Magenta & N \\
+    Ground\_Floor\_Entrance\_Yellow & O \\
+    Ground\_Floor\_Green\_Area & P \\
+    Ground\_Floor\_Magenta\_Area & Q \\
+    Ground\_Floor\_Red\_Area & R \\
+    Ground\_Floor\_Yellow\_Area & S \\
+    Stairs\_Atrium & T \\
+    \bottomrule
+    \end{tabular}
+    \caption{Encoding of Classes}
+    \label{tab:class-encoding}
+  \end{table}
+
+  % figure
+  \begin{figure}[ht]
+    \centering
+    % subfigure
+    \begin{subfigure}[b]{0.49\linewidth}
+      \centering
+      \includegraphics[width=\linewidth]{figures/experiment1-val-loss.png}
+      \caption{Validation Loss/ Samples}
+      \label{fig:experiment1-val-acc}
+    \end{subfigure}
+    \hfill
+    % subfigure
+    \begin{subfigure}[b]{0.49\linewidth}
+      \centering
+      \includegraphics[width=\linewidth]{figures/experiment1-val-acc.png}
+      \caption{Valiation Accuracy/ Samples}
+      \label{fig:experiment1-val-loss}
+    \end{subfigure}
+    \caption{Validation Metrics for Experiment 1}
+    \label{fig:experiment-1-validation}
+  \end{figure}
+
 
   \begin{table}[ht]
     \centering
@@ -735,13 +812,23 @@
 
   % section Results (end)
 
-  \section{Discussion} % (fold)
+  \section{Limitations \& Future Work} % (fold)
   \label{sec:discussion}
 
   % section Discussion (end)
 
   \section{Conclusion} % (fold)
   \label{sec:conclusion}
+
+  We have shown that the problem of indoor localisation can be phrased as a
+  classification problem and be solved through the use of deep learning models
+  in a data-efficient manner.
+  Simple convolutional neural architectures were able to provide accurate and
+  robust predictions and showed emerging learning of features mostly invariant
+  to natural variations in the environment.
+  The use of a recurrent neural network architecture allowed for the
+  incorporation of temporal information and improved the accuracy of the
+  predictions, though only marginally so.
 
   % section Conclusion (end)
 
@@ -769,6 +856,7 @@
   used for training and evaluation of the models. For training the \texttt{MPS}
   backend was used for accelerated training. However, for inference a single CPU
   core was used, to approximate latency and throughput on mobile devices.
+
 
   \begin{table}[ht]
     \centering
@@ -804,5 +892,78 @@
   \newpage
   \bibliography{references}
   \bibliographystyle{plain}
+
+  \section{Appendix} % (fold)
+  \label{sec:appendix}
+
+  % conf matrices for all models
+  \newgeometry{margin=1cm}
+  \begin{figure}[b]
+    \centering
+    \begin{subfigure}{.33\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]
+        {figures/experiment1-conf-matrix-alexnet.png}
+        \caption{\texttt{alexnet}}
+    \end{subfigure}%
+    \begin{subfigure}{.33\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]
+        {figures/experiment1-conf-matrix-alexnet-rnn.png}
+        \caption{\texttt{alexnet-rnn}}
+    \end{subfigure}
+    \begin{subfigure}{.33\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]
+        {figures/experiment1-conf-matrix-resnet18.png}
+        \caption{\texttt{resnet18}}
+    \end{subfigure}
+    \begin{subfigure}{.33\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]
+        {figures/experiment1-conf-matrix-alexnet-lstm.png}
+        \caption{\texttt{alexnet-lstm}}
+    \end{subfigure}
+    \begin{subfigure}{.33\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]
+        {figures/experiment1-conf-matrix-resnet50.png}
+        \caption{\texttt{resnet50}}
+    \end{subfigure}%
+    \begin{subfigure}{.33\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]
+        {figures/experiment1-conf-matrix-resnet18-rnn.png}
+        \caption{\texttt{resnet18-rnn}}
+    \end{subfigure}
+    \begin{subfigure}{.33\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]
+        {figures/experiment1-conf-matrix-mobilenet_v3_small.png}
+        \caption{\texttt{mobilenet\_v3\_small}}
+    \end{subfigure}%
+    \begin{subfigure}{.33\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]
+        {figures/experiment1-conf-matrix-resnet18-lstm.png}
+        \caption{\texttt{resnet18-lstm}}
+    \end{subfigure}%
+
+    \caption{
+      \textbf{Confusion Matrices.} The table shows the (unnormalised) confusion
+      matrices of all models in Experiment 1. The predictions are computed on
+      the frames from the test split and the matrix. The entry at index $(i,j)$
+      is the number of samples with true class $i$ that were predicted to be
+      class $j$.
+    }
+
+    \label{fig:conf-matrices-experiment1}
+  \end{figure}
+
+  \newpage
+  \restoregeometry
+
+  % section appendix (end)
+  
 
 \end{document}
