@@ -122,17 +122,21 @@ class ImageDataset(BaseDataset):
         super().__init__(**kwargs)
 
         # build dict of image paths and labels by class
-        # subset on include_classes and randomly sample ratio
         self.frames_by_class: dict[str, list[tuple[str, str]]] = defaultdict(list)
         for video_id, frames_with_labels in self.frames_by_clip.items():
             for frame_path, label in frames_with_labels:
                 if label in self.include_classes:
-                    n = int(len(frames_with_labels) * self.ratio)
-                    self.frames_by_class[label] = random.sample(frames_with_labels, n)
+                    self.frames_by_class[label].append((frame_path, label))
+
+        # subset the number of frames to ratio * num_frames within each class
+        for label, frames_with_labels in self.frames_by_class.items():
+            num_frames = len(frames_with_labels)
+            n = int(self.ratio * len(frames_with_labels))+1
+            self.frames_by_class[label] = random.sample(frames_with_labels, n)
 
         # flatten dict into list of tuples
         self.data: list[tuple[str, str]] = []
-        for frames_with_labels in self.frames_by_clip.values():
+        for frames_with_labels in self.frames_by_class.values():
             frames, labels = zip(*frames_with_labels)  # unzip
             for frame, label in zip(frames, labels):
                 self.data.append((frame, label))
@@ -213,14 +217,16 @@ class VideoDataset(BaseDataset):
             for i in range(0, len(lst), n):
                 res.append(lst[i : i + n])
             return res[:-1]
-        
+
         self.frames_per_clip = 5
 
         # partition frames in video in clips
         self.partioned_data = []
         for _, frames_with_labels in self.data:
-            partioned_frames_with_labels = partition(frames_with_labels, self.frames_per_clip)
-            for  frames_with_labels in partioned_frames_with_labels:
+            partioned_frames_with_labels = partition(
+                frames_with_labels, self.frames_per_clip
+            )
+            for frames_with_labels in partioned_frames_with_labels:
                 self.partioned_data.append(frames_with_labels)
         self.data = self.partioned_data
 
@@ -260,3 +266,14 @@ class VideoDataset(BaseDataset):
     def __len__(self):
         return self.num_samples
 
+
+if __name__ == "__main__":
+    config = ImageDataset.default_config()
+    config["split"] = "train"
+
+    img = ImageDataset(**config)
+
+    config["ratio"] = 0.5
+    img2 = ImageDataset(**config)
+
+    print(len(img), len(img2))
