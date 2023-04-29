@@ -1,20 +1,45 @@
 #!/bin/bash
 
-# experiment 1: maximum data/ same training/ different models
-python src/train.py -M alexnet --all-classes --wandb-group experiment1 --wandb-name alexnet --wandb-log
-python src/train.py -M resnet18 --all-classes --wandb-group experiment1 --wandb-name resnet18 --wandb-log
-python src/train.py -M resnet50 --all-classes --wandb-group experiment1 --wandb-name resnet50 --wandb-log
-python src/train.py -M mobilenet-v3-small --all-classes --wandb-group experiment1 --wandb-name mobilenet-v3-small --device cpu --wandb-log
+# EXPERIMENT 1
+# python src/train.py -M alexnet --all-classes --wandb-group experiment1 --wandb-name alexnet --wandb-log
+# python src/train.py -M resnet18 --all-classes --wandb-group experiment1 --wandb-name resnet18 --wandb-log
+# python src/train.py -M resnet50 --all-classes --wandb-group experiment1 --wandb-name resnet50 --wandb-log
+# python src/train.py -M mobilenet_v3_small --all-classes --wandb-group experiment1 --wandb-name mobilenet_v3_small --device cpu --wandb-log
+# python src/train.py -M resnet18-rnn --all-classes --wandb-group experiment1 --wandb-name resnet18-rnn --batch-size 8 --max-epochs 20 --wandb-log
+# python src/train.py -M resnet18-lstm --all-classes --wandb-group experiment1 --wandb-name resnet18-lstm --batch-size 8 --max-epochs 20 --wandb-log
+# python src/train.py -M alexnet-rnn --all-classes --wandb-group experiment1 --wandb-name alexnet-rnn --batch-size 8 --max-epochs 20 --wandb-log
+# python src/train.py -M alexnet-lstm --all-classes --wandb-group experiment1 --wandb-name alexnet-lstm --batch-size 8 --max-epochs 20 --wandb-log
 
-# experiment 2: baseline model/ different number of classes
-python src/train.py -M resnet18 --ground-floor --wandb-group experiment2 --wandb-name resnet18-ground-floor --wandb-log
-python src/train.py -M resnet18 --first-floor --wandb-group experiment2 --wandb-name resnet18-first-floor --wandb-log
-python src/train.py -M resnet18 --all-classes --wandb-group experiment2 --wandb-name resnet18-all --wandb-log
+# EVAL
+# python src/eval.py -M alexnet -V latest
+# python src/eval.py -M resnet18 -V latest
+# python src/eval.py -M resnet50 -V latest
+# python src/eval.py -M mobilenet_v3_small -V latest
+# python src/eval.py -M resnet18-rnn -V latest
+# python src/eval.py -M resnet18-lstm -V latest
+# python src/eval.py -M alexnet-rnn -V latest
+# python src/eval.py -M alexnet-lstm -V latest
 
-# experiment 3: baseline model/ different number of samples
-python src/train.py -M resnet18 --all-classes --ratio 0.05 --wandb-group experiment3 --wandb-name resnet18-05 --wandb-log
-python src/train.py -M resnet18 --all-classes --ratio 0.1 --wandb-group experiment3 --wandb-name resnet18-10 --wandb-log
-python src/train.py -M resnet18 --all-classes --ratio 0.25 --wandb-group experiment3 --wandb-name resnet18-25 --wandb-log
-python src/train.py -M resnet18 --all-classes --ratio 0.50 --wandb-group experiment3 --wandb-name resnet18-50 --wandb-log
-python src/train.py -M resnet18 --all-classes --ratio 0.75 --wandb-group experiment3 --wandb-name resnet18-75 --wandb-log
-python src/train.py -M resnet18 --all-classes --ratio 1.00 --wandb-group experiment3 --wandb-name resnet18-100 --wandb-log
+# EXPERIMENT 2
+# python src/train.py -M resnet18 --all-classes --ratio 0.1 --wandb-group experiment2 --wandb-name resnet18-10 --wandb-log
+# python src/train.py -M resnet18 --all-classes --ratio 0.2 --wandb-group experiment2 --wandb-name resnet18-20 --wandb-log
+# python src/train.py -M resnet18 --all-classes --ratio 0.3 --wandb-group experiment2 --wandb-name resnet18-30 --wandb-log
+# python src/train.py -M resnet18 --all-classes --ratio 0.4 --wandb-group experiment2 --wandb-name resnet18-40 --wandb-log
+# python src/train.py -M resnet18 --all-classes --ratio 0.5 --wandb-group experiment2 --wandb-name resnet18-50 --wandb-log
+# python src/train.py -M resnet18 --all-classes --ratio 0.6 --wandb-group experiment2 --wandb-name resnet18-60 --wandb-log
+# python src/train.py -M resnet18 --all-classes --ratio 0.7 --wandb-group experiment2 --wandb-name resnet18-70 --wandb-log
+# python src/train.py -M resnet18 --all-classes --ratio 0.8 --wandb-group experiment2 --wandb-name resnet18-80 --wandb-log
+# python src/train.py -M resnet18 --all-classes --ratio 0.9 --wandb-group experiment2 --wandb-name resnet18-90 --wandb-log
+# python src/train.py -M resnet18 --all-classes --ratio 1.0 --wandb-group experiment2 --wandb-name resnet18-100 --wandb-log
+  
+# EVAL
+python src/eval.py -M resnet18 -V v13
+python src/eval.py -M resnet18 -V v14
+python src/eval.py -M resnet18 -V v15
+python src/eval.py -M resnet18 -V v16
+python src/eval.py -M resnet18 -V v17
+python src/eval.py -M resnet18 -V v18
+python src/eval.py -M resnet18 -V v19
+python src/eval.py -M resnet18 -V v20
+python src/eval.py -M resnet18 -V v21
+python src/eval.py -M resnet18 -V v22

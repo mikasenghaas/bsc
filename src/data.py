@@ -131,7 +131,7 @@ class ImageDataset(BaseDataset):
         # subset the number of frames to ratio * num_frames within each class
         for label, frames_with_labels in self.frames_by_class.items():
             num_frames = len(frames_with_labels)
-            n = int(self.ratio * len(frames_with_labels))+1
+            n = int(self.ratio * len(frames_with_labels))
             self.frames_by_class[label] = random.sample(frames_with_labels, n)
 
         # flatten dict into list of tuples
