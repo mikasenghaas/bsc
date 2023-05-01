@@ -21,7 +21,8 @@ DEVICE: str = (
 # PATHS
 BASEPATH: str = "/".join(os.path.abspath(__file__).split("/")[:-2])
 RAW_DATA_PATH: str = os.path.join(BASEPATH, "src", "data", "raw")
-PROCESSED_DATA_PATH: str = os.path.join(BASEPATH, "src", "data", "processed")
+IMAGE_DATA_PATH: str = os.path.join(BASEPATH, "src", "data", "images")
+VIDEO_DATA_PATH: str = os.path.join(BASEPATH, "src", "data", "videos")
 ARTIFACTS_PATH: str = os.path.join(BASEPATH, "artifacts")
 
 # CLASSES

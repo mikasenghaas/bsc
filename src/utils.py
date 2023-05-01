@@ -22,40 +22,12 @@ from termcolor import colored
 from torchvision import transforms
 
 from config import (
-    BATCH_SIZE,
-    CLASSES,
-    DEVICE,
-    FIRST_FLOOR,
-    FPS,
-    GAMMA,
-    GROUND_FLOOR,
     LOG,
-    LR,
-    MAX_EPOCHS,
-    MAX_LENGTH,
-    RATIO,
     RAW_DATA_PATH,
     SPLITS,
-    STEP_SIZE,
     MEAN,
     STD,
 )
-
-
-def add_general_args(group: argparse._ArgumentGroup) -> None:
-    """
-    Add general arguments to argparse group.
-
-    Args:
-        group (argparse._ArgumentGroup): Argument group to add arguments to
-    """
-    group.add_argument(
-        "--device",
-        type=str,
-        choices=["cpu", "cuda", "mps"],
-        default=DEVICE,
-        help="Training Device",
-    )
 
 
 def add_wandb_args(group: argparse._ArgumentGroup) -> None:
@@ -82,45 +54,6 @@ def add_wandb_args(group: argparse._ArgumentGroup) -> None:
     )
 
 
-def add_data_args(group):
-    """
-    Add arguments for dataset to argparse group.
-
-    Args:
-        group (argparse._ArgumentGroup): Argument group to add arguments to
-    """
-    group.add_argument(
-        "--include-classes",
-        nargs="+",
-        default=[],
-        help="List of classes to include in training",
-    )
-    group.add_argument(
-        "--all-classes",
-        action=argparse.BooleanOptionalAction,
-        default=False,
-        help="Adds all classes in category 'Ground Floor' to training",
-    )
-    group.add_argument(
-        "--ground-floor",
-        action=argparse.BooleanOptionalAction,
-        default=False,
-        help="Adds all classes in category 'Ground Floor' to training",
-    )
-    group.add_argument(
-        "--first-floor",
-        action=argparse.BooleanOptionalAction,
-        default=False,
-        help="Adds all classes in category 'First Floor' to training",
-    )
-    group.add_argument(
-        "--ratio",
-        type=float,
-        default=RATIO,
-        help="Randomly sample a ratio of samples in every class",
-    )
-
-
 def add_model_args(group):
     """
     Add arguments for model to argparse group.
@@ -139,6 +72,7 @@ def add_model_args(group):
         help="Model Version. Either 'latest' or 'vX'",
     )
 
+
 def load_preprocess_args() -> argparse.Namespace:
     """
     Return parsed arguments for script preprocess.py.
@@ -156,16 +90,16 @@ def load_preprocess_args() -> argparse.Namespace:
         help="Which split to extract clips from",
     )
     parser.add_argument(
-        "--max-length",
+        "--vid-length",
         type=int,
-        default=MAX_LENGTH,
-        help="Maximum number of frames per extracted clip",
+        default=5,
+        help="Max. Length of video in seconds",
     )
     parser.add_argument(
-        "--fps",
+        "--crop-size",
         type=int,
-        default=FPS,
-        help="Number of frames per second (FPS) to extract",
+        default=256,
+        help="Size of crop for each frame/ clip",
     )
 
     args = parser.parse_args()
@@ -182,55 +116,25 @@ def load_train_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()  # create parser
 
     # create general, model, data and wandb args
-    general_group = parser.add_argument_group(title="General Arguments")
     model_group = parser.add_argument_group(title="Model Arguments")
-    data_group = parser.add_argument_group(title="Data Arguments")
     wandb_group = parser.add_argument_group(title="W&B Arguments")
 
     # add args to each group
     add_model_args(model_group)
-    add_data_args(data_group)
-    add_general_args(general_group)
     add_wandb_args(wandb_group)
 
     # add training args
     train_group = parser.add_argument_group(title="Training Arguments")
-    train_group.add_argument(
-        "--max-epochs", type=int, default=MAX_EPOCHS, help="Maximum Epochs"
-    )
+    train_group.add_argument("--epochs", type=int, help="Maximum Epochs")
     train_group.add_argument(
         "--batch-size",
         type=int,
-        default=BATCH_SIZE,
         help="Batch Size in Training and Validation Loader",
     )
-    train_group.add_argument(
-        "--lr", type=float, default=LR, help="Learning Rate for Optimiser"
-    )
-    train_group.add_argument(
-        "--step-size",
-        type=int,
-        default=STEP_SIZE,
-        help="Step Size for Scheduler",
-    )
-    train_group.add_argument(
-        "--gamma", type=float, default=GAMMA, help="Gamma for Scheduler"
-    )
+    train_group.add_argument("--lr", type=float, help="Learning Rate for Optimiser")
 
     # parse args
     args = parser.parse_args()
-
-    include_classes = set(args.include_classes)
-    if args.all_classes:
-        include_classes |= set(CLASSES)
-        args.ground_floor = True
-        args.first_floor = True
-    else:
-        if args.ground_floor:
-            include_classes |= set(GROUND_FLOOR)
-        if args.first_floor:
-            include_classes |= set(FIRST_FLOOR)
-    args.include_classes = sorted(include_classes)
 
     if not args.wandb_log:
         args.wandb_name = False
@@ -238,6 +142,7 @@ def load_train_args() -> argparse.Namespace:
         args.wandb_tags = []
 
     return args
+
 
 def load_eval_args() -> argparse.Namespace:
     """
@@ -250,10 +155,8 @@ def load_eval_args() -> argparse.Namespace:
 
     # model and general args
     model_group = parser.add_argument_group(title="Model Arguments")
-    general_group = parser.add_argument_group(title="Data Arguments")
 
     add_model_args(model_group)
-    add_general_args(general_group)
 
     # parse args
     args = parser.parse_args()
@@ -272,10 +175,8 @@ def load_infer_args() -> argparse.Namespace:
 
     # model and general args
     model_group = parser.add_argument_group(title="Model Arguments")
-    general_group = parser.add_argument_group(title="Data Arguments")
 
     add_model_args(model_group)
-    add_general_args(general_group)
 
     # infer args
     infer_group = parser.add_argument_group(title="Inference Arguments")
@@ -666,6 +567,7 @@ def get_label(second_in_video: int, annotations: list[tuple[str, str]]) -> str:
     # if second in video is greater than all timestamps, return the last label
     return annotations[-1][1]
 
+
 def load_labels(filepath: str) -> list[str]:
     """
     Load a list of labels from a text file. Assumes that each label
@@ -682,6 +584,7 @@ def load_labels(filepath: str) -> list[str]:
         for line in f:
             labels.append(line.strip())
     return labels
+
 
 def save_pickle(obj: Any, filepath: str) -> None:
     """
