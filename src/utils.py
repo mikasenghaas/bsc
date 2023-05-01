@@ -277,12 +277,12 @@ def get_progress_bar(
     epoch: int,
     max_epochs: int,
     batch: int,
-    max_batches: int,
     training_time: float,
     train_loss: float,
     train_acc: float,
     val_loss: float,
     val_acc: float,
+    train: bool,
 ):
     """
     Return a string representing the current training progress.
@@ -291,7 +291,6 @@ def get_progress_bar(
         epoch (int): Current epoch
         max_epochs (int): Total number of epochs
         batch (int): Current batch
-        max_batches (int): Total number of batches
         running_training_time (float): Total time spent training
         running_inference_time (float): Total time spent inferring
         samples_seen (int): Total number of samples seen
@@ -305,7 +304,7 @@ def get_progress_bar(
     """
     # format function inputs
     a = f"{str(epoch)}".zfill(len(str(max_epochs)))
-    b = f"{str(batch)}".zfill(len(str(max_batches)))
+    b = f"{str(batch)}".zfill(3)
     c = f"{round(training_time * 1000, 2)}ms"
     d = f"{train_loss:.3f}"
     e = f"{(train_acc * 100):.1f}%"
@@ -313,7 +312,8 @@ def get_progress_bar(
     g = f"{(val_acc * 100):.1f}%"
 
     return (
-        f"{a}/{max_epochs} | {b}/{max_batches} | {c} | "
+        f"{a}/{max_epochs} | {'Train' if train else 'Val'} | "
+        f"{b} | {c} | "
         f"Train: {d} ({e}) | Val: {f} ({g})"
     )
 

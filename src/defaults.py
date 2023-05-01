@@ -24,7 +24,7 @@ DEFAULT = {
             "shuffle": True,
         },
         "optim": {
-            "lr": 1e-3,
+            "lr": 1e-4,
             "weight_decay": 1e-4,
         },
         "trainer": {"epochs": 10, "device": "mps"},
@@ -53,7 +53,7 @@ DEFAULT = {
             "shuffle": True,
         },
         "optim": {
-            "lr": 1e-3,
+            "lr": 1e-4,
             "weight_decay": 1e-4,
         },
         "trainer": {"epochs": 10, "device": "mps"},
@@ -83,7 +83,7 @@ DEFAULT = {
             "shuffle": True,
         },
         "optim": {
-            "lr": 1e-3,
+            "lr": 1e-4,
             "weight_decay": 1e-4,
         },
         "trainer": {"epochs": 10, "device": "mps"},
@@ -113,7 +113,7 @@ DEFAULT = {
             "shuffle": True,
         },
         "optim": {
-            "lr": 1e-3,
+            "lr": 1e-4,
             "weight_decay": 1e-4,
         },
         "trainer": {"epochs": 10, "device": "mps"},
@@ -142,7 +142,7 @@ DEFAULT = {
             "shuffle": True,
         },
         "optim": {
-            "lr": 1e-3,
+            "lr": 1e-4,
             "weight_decay": 1e-4,
         },
         "trainer": {"epochs": 10, "device": "mps"},
@@ -171,7 +171,7 @@ DEFAULT = {
             "shuffle": True,
         },
         "optim": {
-            "lr": 1e-3,
+            "lr": 1e-4,
             "weight_decay": 1e-4,
         },
         "trainer": {"epochs": 10, "device": "cpu"},
@@ -201,7 +201,7 @@ DEFAULT = {
             "shuffle": True,
         },
         "optim": {
-            "lr": 1e-3,
+            "lr": 1e-4,
             "weight_decay": 1e-4,
         },
         "trainer": {"epochs": 10, "device": "mps"},
@@ -230,7 +230,7 @@ DEFAULT = {
             "shuffle": True,
         },
         "optim": {
-            "lr": 1e-3,
+            "lr": 1e-4,
             "weight_decay": 1e-4,
         },
         "trainer": {"epochs": 10, "device": "mps"},
@@ -260,7 +260,7 @@ DEFAULT = {
             "shuffle": True,
         },
         "optim": {
-            "lr": 1e-3,
+            "lr": 1e-4,
             "weight_decay": 1e-4,
         },
         "trainer": {"epochs": 10, "device": "mps"},
@@ -293,8 +293,8 @@ DEFAULT = {
             "batch_size": 4,
         },
         "optim": {
-            "lr": 0.0001,
-            "weight_decay": 1e-5,
+            "lr": 1e-4,
+            "weight_decay": 1e-4,
         },
         "trainer": {"epochs": 10, "device": "cpu"},
     },
@@ -327,7 +327,7 @@ DEFAULT = {
         },
         "optim": {
             "lr": 0.0001,
-            "weight_decay": 1e-5,
+            "weight_decay": 1e-4,
         },
         "trainer": {"epochs": 10, "device": "cpu"},
     },
@@ -360,7 +360,7 @@ DEFAULT = {
         },
         "optim": {
             "lr": 0.0001,
-            "weight_decay": 1e-5,
+            "weight_decay": 1e-4,
         },
         "trainer": {"epochs": 10, "device": "cpu"},
     },
