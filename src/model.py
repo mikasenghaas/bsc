@@ -73,7 +73,6 @@ class VideoClassifier(nn.Module):
                 fc = model.blocks[5].proj
                 model.blocks[5].proj = nn.Linear(fc.in_features, num_classes)
             case "slowfast_r50":
-                raise NotImplementedError("Not implemented yet.")
                 fc = model.blocks[6].proj
                 model.blocks[6].proj = nn.Linear(fc.in_features, num_classes)
             case "x3d_s":
