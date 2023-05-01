@@ -1,21 +1,22 @@
 # train.py
 #  by: mika senghaas
-
 import argparse
 import os
 from timeit import default_timer
 
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
-from torch.utils.mobile_optimizer import optimize_for_mobile
+from torch.utils.data import Dataset, DataLoader, Subset
 from tqdm import tqdm
 import wandb
 
-from config import IMAGE_CLASSIFIERS, VIDEO_CLASSIFIERS, ARTIFACTS_PATH
 from data import ImageDataset, VideoDataset
-from model import ImageClassifier, VideoClassifier
-from transform import FrameTransformer
+from transform import ImageTransform, VideoTransform
+from defaults import DEFAULT
+from modules import MODULES
+
+from config import ARTIFACTS_PATH
+
 from utils import (
     end_task,
     get_progress_bar,
@@ -30,18 +31,17 @@ from utils import (
 
 def train(
     model: nn.Module,
-    transform: FrameTransformer,
+    transform: ImageTransform or VideoTransform,
     train_loader: DataLoader,
-    val_loader: DataLoader,
+    test_data: Dataset,
     criterion: nn.Module,
     optim: torch.optim.Optimizer,
-    scheduler: torch.optim.lr_scheduler._LRScheduler,
     args: argparse.Namespace,
+    config,
 ):
     """
     Train a model on a given dataset given a data transformer class, loader classes for
-    a training and validation split, an criterion, optimizer and learning rate
-    scheduler.
+    a training and validation split, an criterion, optimizer.
 
     Args:
         model (nn.Module): Model to be trained
@@ -50,11 +50,14 @@ def train(
         val_loader (DataLoader): Validation split loader
         criterion (nn.Module): Loss function
         optim (torch.optim): Optimizer
-        scheduler (torch.optim.lr_scheduler): Learning rate scheduler
         args (argparse.Namespace): Arguments
     """
     # set progress bar with max epochs
-    pbar = tqdm(range(args.max_epochs))
+    batch_size = config["loader"]["batch_size"]
+    epochs = config["trainer"]["epochs"]
+    device = config["trainer"]["device"]
+
+    pbar = tqdm(range(epochs))
     pbar.set_description(
         "XX/XX | XX/XX | XX.Xms/ XX.Xms | Train: X.XXX (XX.X%) | Val: X.XXX (XX.X%)"
     )
@@ -70,19 +73,24 @@ def train(
     if type(train_data) == ImageDataset:
         total_samples = len(train_data)
     elif type(train_data) == VideoDataset:
-        total_samples = sum([len(clip) for clip in train_data.data])
+        num_frames = config["transform"]["num_frames"]
+        total_samples = (
+            len(train_data) * num_frames * batch_size
+        )  # batches * clips/batch * frames/clip
     else:
         raise ValueError("Unknown dataset type")
+    # print(total_samples)
 
     # put model on device
-    model.to(args.device)
+    model.to(device)
 
     # start trainingj
     for epoch in pbar:
         # initialise running metrics
         running_loss, running_correct = 0.0, 0
         running_time = 0.0
-        samples_seen = 0
+        samples_seen = 0 # sample is one prediction
+        frames_seen = 0 # frame is one sample
 
         # set model to train mode
         model.train()
@@ -90,18 +98,26 @@ def train(
         # iterate over training data
         for batch_num, (inputs, labels) in enumerate(train_loader):
             # put data on device
-            inputs = inputs.to(args.device)
-            labels = labels.to(args.device)
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+            # print(inputs.shape)
+            # print(labels.shape)
 
             # zero the parameter gradients
             optim.zero_grad()
 
             # forward pass
             start = default_timer()
-            logits = model(transform(inputs))
+            output = model(inputs)
             running_time += default_timer() - start
 
-            # if sequence prediction, reshape logits
+            # google lenet returns custom output object
+            if type(output) != torch.Tensor:
+                logits = output.logits
+            else:
+                logits = output
+
+            # reshape logits and update samples seen
             if logits.ndim == 3:
                 B, T, C = logits.shape
                 logits = logits.view(B * T, C)
@@ -110,6 +126,13 @@ def train(
             elif logits.ndim == 2:
                 B, C = logits.shape
                 samples_seen += B
+
+            # compuute frames seen
+            if inputs.ndim == 4: # image
+                frames_seen = samples_seen
+            elif inputs.ndim == 5: # video
+                B, _, T, _, _ = inputs.shape
+                frames_seen += B * T
 
             # compute predictions
             preds = torch.argmax(logits, 1)
@@ -126,16 +149,16 @@ def train(
             running_correct += torch.sum(preds == labels).item()
 
             # normalise
-            train_acc = running_correct / samples_seen
-            train_loss = running_loss / samples_seen
-            training_time = running_time / samples_seen
+            train_acc = running_correct / samples_seen # loss per prediction
+            train_loss = running_loss / samples_seen # acc per prediction
+            training_time = running_time / frames_seen # time per frame
 
             if train_acc > best_train_acc:
                 best_train_acc = train_acc
 
             progress = get_progress_bar(
                 epoch + 1,
-                args.max_epochs,
+                epochs,
                 batch_num + 1,
                 len(train_loader),
                 training_time,
@@ -150,7 +173,7 @@ def train(
             if args.wandb_log:
                 wandb.log(
                     {
-                        "samples_seen": epoch * total_samples + samples_seen,
+                        "frames_seen": epoch * total_samples + frames_seen,
                         "train/acc": train_acc,
                         "train/loss": train_loss,
                     }
@@ -158,77 +181,75 @@ def train(
 
         training_times.append(training_time)
 
-        if val_loader is not None:
-            # initialise running metrics (not tracking time)
-            running_loss, running_correct = 0.0, 0
-            samples_seen = 0
+        # list of k random integers between 0 and len(train_data)
+        k = int(len(test_data) * 0.05)
+        random_indices = torch.randint(0, len(test_data), (k,))
+        val_data = Subset(test_data, random_indices)
+        val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=True)
 
-            # set model to eval mode
-            model.eval()
+        # initialise running metrics (not tracking time)
+        running_loss, running_correct = 0.0, 0
+        samples_seen = 0
 
-            # iterate over validation data
-            for batch_num, (inputs, labels) in enumerate(val_loader):
-                # put data on device
-                inputs = inputs.to(args.device)
-                labels = labels.to(args.device)
+        # set model to eval mode
+        model.eval()
 
-                # forward pass
-                logits = model(transform(inputs))
+        # iterate over validation data
+        for batch_num, (inputs, labels) in enumerate(val_loader):
+            # put data on device
+            inputs = inputs.to(device)
+            labels = labels.to(device)
 
-                # if sequence prediction, reshape logits
-                if logits.ndim == 3:
-                    B, T, C = logits.shape
-                    logits = logits.view(B * T, C)
-                    labels = labels.view(B * T)
-                    samples_seen += B * T
+            # forward pass
+            logits = model(inputs)
 
-                elif logits.ndim == 2:
-                    B, C = logits.shape
-                    samples_seen += B
+            # if sequence prediction, reshape logits
+            if logits.ndim == 3:
+                B, T, C = logits.shape
+                logits = logits.view(B * T, C)
+                labels = labels.view(B * T)
+                samples_seen += B * T
 
-                # compute predictions and loss
-                preds = torch.argmax(logits, 1)
-                loss = criterion(logits, labels)
+            elif logits.ndim == 2:
+                B, C = logits.shape
+                samples_seen += B
 
-                # accumulate loss and correct predictions
-                running_loss += loss.item()
-                running_correct += torch.sum(labels == preds).item()
+            # compute predictions and loss
+            preds = torch.argmax(logits, 1)
+            loss = criterion(logits, labels)
 
-            val_loss = running_loss / samples_seen
-            val_acc = running_correct / samples_seen
+            # accumulate loss and correct predictions
+            running_loss += loss.item()
+            running_correct += torch.sum(labels == preds).item()
 
-            if val_acc > best_val_acc:
-                best_val_acc = val_acc
+        val_loss = running_loss / samples_seen
+        val_acc = running_correct / samples_seen
 
-            progress = get_progress_bar(
-                epoch + 1,
-                args.max_epochs,
-                batch_num + 1,
-                len(val_loader),
-                training_time,
-                train_loss,
-                train_acc,
-                val_loss,
-                val_acc,
+        if val_acc > best_val_acc:
+            best_val_acc = val_acc
+
+        progress = get_progress_bar(
+            epoch + 1,
+            epochs,
+            batch_num + 1,
+            len(val_loader),
+            training_time,
+            train_loss,
+            train_acc,
+            val_loss,
+            val_acc,
+        )
+        pbar.set_description(progress)
+
+        # log epoch metrics for train and val split
+        if args.wandb_log:
+            wandb.log(
+                {
+                    "val/acc": val_acc,
+                    "val/loss": val_loss,
+                }
             )
-            pbar.set_description(progress)
 
-            # log epoch metrics for train and val split
-            if args.wandb_log:
-                wandb.log(
-                    {
-                        "val/acc": val_acc,
-                        "val/loss": val_loss,
-                    }
-                )
-
-        # adjust learning rate
-        scheduler.step()
-
-    # log average training step time/ sample
-    training_time_per_sample_ms = round(
-        sum(training_times) * 1000 / len(training_times), 2
-    )
     if args.wandb_log:
         wandb.summary.update(
             {
@@ -247,14 +268,52 @@ def main():
     # parse cli arguments
     args = load_train_args()
 
+    # load config
+    start_task(f"Loading configuation for {args.model}")
+    config = DEFAULT[args.model]
+
+    # overwrite config with cli arguments (if any)
+    config["trainer"]["epochs"] = (
+        args.epochs if args.epochs else config["trainer"]["epochs"]
+    )
+    config["optim"]["lr"] = args.lr if args.lr else config["optim"]["lr"]
+    config["loader"]["batch_size"] = (
+        args.batch_size if args.batch_size else config["loader"]["batch_size"]
+    )
+
+    # extract model type
+    model_type = config["general"]["type"]
+    pp = model_type[0].upper() + model_type[1:]
+
+    # initialise data
+    start_task(f"Initialising {pp}Dataset, {pp}Transform and {pp}Classifier")
+    DATA = MODULES[model_type]["data"]
+    TRANSFORM = MODULES[model_type]["transform"]
+    MODEL = MODULES[model_type]["model"]
+
+    # load transform, model, data
+    transform = TRANSFORM(**config["transform"])
+    train_data = DATA(**config["dataset"], split="train", transform=transform)
+    test_data = DATA(**config["dataset"], split="test", transform=transform)
+    model = MODEL(**config["model"])
+
+    # initialise data loader
+    start_task("Initialising data loader")
+    train_loader = DataLoader(train_data, **config["loader"])
+
+    # define loss, optimiser
+    criterion = nn.CrossEntropyLoss()  # pyright: ignore
+    optim = torch.optim.AdamW(model.parameters(), **config["optim"])
+
     # initialise wandb run
+    start_task("Initialising W&B")
     if args.wandb_log:
-        run = wandb.init(
-            project="bsc",
+        wandb.init(
+            project="bsc-2",
             group=args.wandb_group if args.wandb_group else None,
             name=args.wandb_name if args.wandb_name else None,
             tags=args.wandb_tags if args.wandb_tags else None,
-            config=vars(args),
+            config=config,
         )
 
         # set custom x axis for logging
@@ -263,77 +322,26 @@ def main():
         wandb.define_metric("train/*", step_metric="samples_seen")
         wandb.define_metric("val/*", step_metric="samples_seen")
 
-    # load data
-    start_task("Initialising Data and Model")
-
-    # image or video classifier
-    if args.model in IMAGE_CLASSIFIERS:
-        start_task(f"Recognised ImageClasssifier {args.model}")
-        train_data = ImageDataset(
-            split="train", include_classes=args.include_classes, ratio=args.ratio
-        )
-        test_data = ImageDataset(
-            split="test", include_classes=args.include_classes, ratio=args.ratio
-        )
-
-        model = ImageClassifier(
-            model_name=args.model,
-            num_classes=len(args.include_classes),
-            id2class=train_data.id2class,
-            class2id=train_data.id2class,
-            run_id=run.id if args.wandb_log else None,
-        )
-
-    elif args.model in VIDEO_CLASSIFIERS:
-        start_task(f"Recognised VideoClassifier {args.model}")
-        train_data = VideoDataset(
-            split="train", include_classes=args.include_classes, ratio=args.ratio
-        )
-        test_data = VideoDataset(
-            split="test", include_classes=args.include_classes, ratio=args.ratio
-        )
-
-        model = VideoClassifier(
-            model_name=args.model,
-            num_classes=len(args.include_classes),
-            id2class=train_data.id2class,
-            class2id=train_data.id2class,
-            run_id=run.id if args.wandb_log else None,
-        )
-    else:
-        raise ValueError(f"Unrecognised model {args.model}")
-
-    # initialise data loader
-    train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True)
-    test_loader = DataLoader(test_data, batch_size=args.batch_size, shuffle=False)
-
-    # initialise transforms
-    transform = FrameTransformer()
-
-    # define loss, optimiser and lr scheduler
-    criterion = nn.CrossEntropyLoss()  # pyright: ignore
-    optim = torch.optim.AdamW(model.parameters(), lr=args.lr)
-    scheduler = torch.optim.lr_scheduler.StepLR(optim, args.step_size, args.gamma)
-
     # train model
     start_task("Starting Training")
 
     # print training configuration
     print("\nTraining Configuration:")
-    print(get_summary(vars(args)))
+    print(get_summary(config))
+    print()
 
     trained_model = train(
         model,
         transform,
         train_loader,
-        test_loader,
+        test_data,
         criterion,
         optim,
-        scheduler,
         args,
+        config,
     )
 
-    # prepare trained model for saving
+    # set to eval and cpu mode for saving
     trained_model.to("cpu")
     trained_model.eval()
 
@@ -354,7 +362,6 @@ def main():
         # save transforms and model
         start_task(f"Saving Artifacts to {filepath}")
         save_pickle(transform, os.path.join(filepath, "transforms.pkl"))
-        save_json(trained_model.meta, os.path.join(filepath, "config.json"))
         torch.save(
             trained_model.state_dict(),
             os.path.join(filepath, f"{args.model}.pt"),
