@@ -66,7 +66,7 @@ def train(
     train_loss, val_loss = 0.0, 0.0
     train_acc, val_acc = 0.0, 0.0
     best_train_acc, best_val_acc = 0.0, 0.0
-    frames_per_epoch = 0 # unknown in advance because of streaming data
+    frames_per_epoch = 0  # unknown in advance because of streaming data
 
     # put model on device
     model.to(device)
@@ -148,8 +148,8 @@ def train(
 
             # normalise
             train_acc = running_correct / samples_seen  # acc per prediction
-            train_loss = running_loss / samples_seen # loss per prediction
-            training_time = running_time / frames_seen # time per frame
+            train_loss = running_loss / samples_seen  # loss per prediction
+            training_time = running_time / frames_seen  # time per frame
 
             if train_acc > best_train_acc:
                 best_train_acc = train_acc
@@ -187,7 +187,7 @@ def train(
                 val_data = Subset(test_data, random_indices)
                 val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=True)
             case "video":
-                 val_loader = DataLoader(test_data, batch_size=batch_size)
+                val_loader = DataLoader(test_data, batch_size=batch_size)
             case _:
                 raise ValueError(f"Model type {model_type} not supported.")
 
@@ -251,7 +251,7 @@ def train(
                 train_acc,
                 val_loss,
                 val_acc,
-                train=False
+                train=False,
             )
             pbar.set_description(progress)
 
@@ -294,6 +294,9 @@ def main():
         args.epochs if args.epochs else config["trainer"]["epochs"]
     )
     config["optim"]["lr"] = args.lr if args.lr else config["optim"]["lr"]
+    config["trainer"]["device"] = (
+        args.device if args.device else config["trainer"]["device"]
+    )
     config["loader"]["batch_size"] = (
         args.batch_size if args.batch_size else config["loader"]["batch_size"]
     )

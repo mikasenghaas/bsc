@@ -126,6 +126,7 @@ def load_train_args() -> argparse.Namespace:
     # add training args
     train_group = parser.add_argument_group(title="Training Arguments")
     train_group.add_argument("--epochs", type=int, help="Maximum Epochs")
+    train_group.add_argument("--device", type=str, help="Training Device")
     train_group.add_argument(
         "--batch-size",
         type=int,
