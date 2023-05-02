@@ -79,7 +79,7 @@ def main():
                 f"-ss {start} "
                 f"-y "
                 f"-i {video_path} "
-                f"-vf scale={args.crop_size}:{args.crop_size} "
+                f'-vf scale="{args.crop_size}:{args.crop_size}" '
                 f"{'-r 1 ' if args.split == 'train' else ''}"
                 f"-t {end-start} "
                 f"{image_destination_path}/{video_id}_{clip_id+1}_%03d.jpg"
@@ -101,7 +101,7 @@ def main():
                     f"-ss {clip_start} "
                     f"-y "
                     f"-i {video_path} "
-                    f"-vf scale={args.crop_size}:{args.crop_size} "
+                    f'-vf scale="{args.crop_size}:{args.crop_size}, setdar=1:1" '
                     f"-t {clip_end-clip_start} "
                     f"{video_destination_path}/{video_id}_{clip_id+1}_{subclip_id+1}.mp4"
                 )
