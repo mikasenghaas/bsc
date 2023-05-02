@@ -3,7 +3,7 @@
 # Ignore Directories
 **/data/**/*
 **/data/**/*
-!**/data/processed.zip
+!**/data/*.zip
 models
 artifacts
 wandb
