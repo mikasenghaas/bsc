@@ -55,7 +55,7 @@ def train(
     epochs = config["trainer"]["epochs"]
     device = config["trainer"]["device"]
     model_type = config["general"]["type"]
-    class2id, id2class = train_loader.dataset.class2id, train_loader.dataset.id2class
+    class2id = train_loader.dataset.class2id
 
     pbar = tqdm(range(epochs))
     pbar.set_description(
