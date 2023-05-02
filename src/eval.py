@@ -4,7 +4,6 @@
 import os
 import re
 import warnings
-from timeit import default_timer
 
 import torch
 from tqdm import tqdm
@@ -14,41 +13,47 @@ import torcheval.metrics.functional as metrics
 from pytorch_benchmark import benchmark
 
 import wandb
-from config import IMAGE_CLASSIFIERS, VIDEO_CLASSIFIERS, BASEPATH, RAW_DATA_PATH, DEVICE, BATCH_SIZE
-from data import ImageDataset, VideoDataset
-from model import ImageClassifier, VideoClassifier
-from utils import end_task, load_infer_args, load_json, load_pickle, start_task
+from config import (
+    BASEPATH,
+    DEVICE,
+)
+from utils import start_task, end_task, load_eval_args, load_json
+
+from defaults import DEFAULT
+from modules import MODULES
 
 # ignore deprecation warnings in torcheval
-warnings.filterwarnings("ignore", message="The reduce argument of torch.scatter with Tensor src is deprecated")
+warnings.filterwarnings(
+    "ignore",
+    message="The reduce argument of torch.scatter with Tensor src is deprecated",
+)
+
 
 def main():
     """
     Main function for src/eval.py
 
-    Loads a model as specified by its name and version number. The artifact and run that produced the model are
-    downloaded from WANDB into the local `artifacts` directory and then loaded into memory. If the model hasn't been
-    evaluated yet, the model is evaluated on the test set and the results are uploaded to WANDB. The model is then
-    marked as evaluated and the artifact is updated.
+    Loads a model as specified by its name and version number. The artifact and
+    run that produced the model are downloaded from WANDB into the local
+    `artifacts` directory and then loaded into memory. The model is evaluated on 
+    the test split of the dataset and the results are uploaded to WANDB. 
 
     The model is evaluated using the following metrics:
-    - Micro-Accuracy
-    - Macro-Accuracy
-    - Mirco-F1 
-    - Macro-F1 
-    - Hit Rate
+    - Top1-Accuracy
+    - Top3-Accuracy
+    - Macro-F1
     - Confusion Matrix
     """
     # start src/infer.py
     start = start_task("Running src/eval.py", get_timer=True)
 
     # load args
-    args = load_infer_args()
+    args = load_eval_args()
 
     # load artifact from wandb
     start_task(f"Loading {args.model}:{args.version}")
     api = wandb.Api()
-    artifact_path = f"mikasenghaas/bsc/{args.model}:{args.version}"
+    artifact_path = f"mikasenghaas/bsc-2/{args.model}:{args.version}"
     artifact = api.artifact(artifact_path, type="model")
 
     # download artifact locally
@@ -58,72 +63,85 @@ def main():
         artifact.download(root=filepath)
 
     # paths to model, transforms and config file
-    model_path = os.path.join(filepath, f"{args.model}.pt")
     config_path = os.path.join(filepath, "config.json")
-    transforms_path = os.path.join(filepath, "transforms.pkl")
+    model_path = os.path.join(filepath, f"{args.model}.pt")
 
-    # load model, transforms and config
-    transform = load_pickle(transforms_path)
+    # load run config
     config = load_json(config_path)
-    if args.model in IMAGE_CLASSIFIERS:
-        batch_size = 32
-        model = ImageClassifier(**config)
-        test_data = ImageDataset(**ImageDataset.default_config())
-        test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
-    elif args.model in VIDEO_CLASSIFIERS:
-        batch_size = 8
-        model = VideoClassifier(**config)
-        test_data = VideoDataset(**VideoDataset.default_config())
-        test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
-    else:
-        raise Exception(f"Model {args.model} is not implemented")
+    model_type = config["general"]["type"]
+    run_id = config["wandb"]["run_id"]
+    batch_size = config["loader"]["batch_size"]
+    device = config["trainer"]["device"] if not args.device else args.device
+
+    # initialise transform and model
+    TRANSFORM = MODULES[model_type]["transform"]
+    MODEL = MODULES[model_type]["model"]
+    DATA = MODULES[model_type]["data"]
+
+    # load transform, model, data
+    transform = TRANSFORM(**config["transform"])
+    model = MODEL(**config["model"])
+    test_data = DATA(**config["dataset"], split="test", transform=transform)
+    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
+
+    # load test data (all frames)
+    class2id = test_data.class2id
+    num_classes = len(class2id)
 
     # load model state
+    start_task("Loading Weights")
     model.load_state_dict(torch.load(model_path))
-
-    # get id2class and run id
-    id2class = {int(i): c for i, c in config["id2class"].items()}
-    num_classes = len(id2class)
-    run_id = config["run_id"]
 
     # initialise wandb run
     start_task(f"Recognised WANB Run ID: {run_id}")
-    run = api.run(f"mikasenghaas/bsc/{run_id}")
+    run = api.run(f"mikasenghaas/bsc-2/{run_id}")
 
     # set eval mode
     model.eval()
     model.to("cpu")
     y_true, y_pred, y_probs = [], [], []
-    samples_seen, running_time = 0, 0.0
+    samples_seen = 0
 
-    # benchmark model inference (FLOPs, latency, throughput, memory and energy consumption) on CPU
+    # benchmark model inference on CPU
     start_task("Benchmarking model")
-    sample, _ = next(iter(test_loader))
-    bm = benchmark(model, transform(sample.to("cpu")), num_runs=10)
+    sample = next(iter(test_loader))
+    match model_type:
+        case "image":
+            bm = benchmark(model, sample[0].to("cpu"), num_runs=5)
+        case "video":
+            bm = benchmark(model, sample["video"].to("cpu"), num_runs=5)
 
-    benchmark_metrics = {
-        "num_params": bm["params"],
-        "flops": bm["flops"],
-        **{re.sub("batches", "samples", k): v for k, v in bm["timing"]["batch_size_1"]["on_device_inference"]["metrics"].items()},
-        **bm["timing"][f"batch_size_{batch_size}"]["on_device_inference"]["metrics"],
-    }
+    benchmark_metrics = {"benchmark": bm}
 
     start_task("Predicting on test split")
-    for inputs, labels in tqdm(test_loader):
+    model.to(device)
+    for batch in tqdm(test_loader):
         with torch.no_grad():
+            match model_type:
+                case "image":
+                    inputs, labels = batch
+                case "video":
+                    inputs = batch["video"]
+                    labels = batch["label"]
+                    labels = torch.tensor(
+                        [class2id[label] for label in labels], dtype=torch.long
+                    )
+                case _:
+                    raise ValueError(f"Model type {model_type} not supported.")
+
             # move data to device
-            inputs.to(DEVICE)
-            labels.to(DEVICE)
+            inputs = inputs.to(device)
+            labels = labels.to(device)
 
             # forward pass
-            logits = model(transform(inputs))
+            logits = model(inputs)
 
             # reshape logits
             if logits.ndim == 3:
                 B, T, C = logits.shape
-                logits = logits.view(B*T, C)
-                labels = labels.view(B*T)
-                samples_seen += B*T
+                logits = logits.view(B * T, C)
+                labels = labels.view(B * T)
+                samples_seen += B * T
             else:
                 B, C = logits.shape
                 samples_seen += B
@@ -137,7 +155,6 @@ def main():
             y_pred = y_pred + preds.tolist()
             y_true = y_true + labels.tolist()
 
-
     start_task("Computing performance metrics")
     # convert to torch tensors
     y_probs = torch.tensor(y_probs)
@@ -149,13 +166,14 @@ def main():
     top3_acc = metrics.multiclass_accuracy(y_probs, y_true, k=3)
 
     # compute f1 score
-    macro_f1 = metrics.multiclass_f1_score(y_pred, y_true, average="macro", num_classes=num_classes)
+    macro_f1 = metrics.multiclass_f1_score(
+        y_pred, y_true, average="macro", num_classes=num_classes
+    )
 
     # conf_matrix
-    conf_matrix = metrics.multiclass_confusion_matrix(y_pred, y_true, num_classes=num_classes)
-
-    # inference time
-    inference_time_per_sample_ms = round(running_time / samples_seen * 1000, 2)
+    conf_matrix = metrics.multiclass_confusion_matrix(
+        y_pred, y_true, num_classes=num_classes
+    )
 
     # create dict with metrics
     eval_metrics = {
@@ -163,7 +181,7 @@ def main():
         "test_top3_acc": top3_acc.item(),
         "test_macro_f1": macro_f1.item(),
         "test_conf_matrix": conf_matrix.tolist(),
-        }
+    }
 
     # merge dicts with metrics
     all_metrics = {**benchmark_metrics, **eval_metrics}
@@ -171,10 +189,10 @@ def main():
     # log metrics to wandb
     start_task("Syncing to WANDB")
     run.summary.update(all_metrics)
-    run.summary.update({"evaluated": True})
 
     # end src/infer.py
     end_task("src/eval.py", start)
+
 
 if __name__ == "__main__":
     main()
