@@ -237,7 +237,7 @@ DEFAULT = {
     },
     "vit_b_16": {
         "general": {
-            "name": "Vision Transformer Base-16",
+            "name": "ViT B-16",
             "desc": "Vision Transformer (ViT) model with 16x16 patch resolution",
             "type": "image",
             "link": "https://pytorch.org/vision/main/models/generated/torchvision."\
