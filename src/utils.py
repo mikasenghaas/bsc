@@ -157,6 +157,9 @@ def load_eval_args() -> argparse.Namespace:
     # model and general args
     model_group = parser.add_argument_group(title="Model Arguments")
 
+    # add device args
+    parser.add_argument("--device", type=str, help="Trainig Device")
+
     add_model_args(model_group)
 
     # parse args
