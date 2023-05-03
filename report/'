@@ -275,16 +275,13 @@
   filter is applied to the input, which is then passed to the next layer. For
   image data, the convolutional filter is a three-dimensional matrix of weights
   that is moving alongside two dimensions (width and height) of the input, and
-  is therefore referred to as 2d-Convolution. For video data, the convolutional
+  is therefore referred to as 2d-convolution. For video data, the convolutional
   filter is a four-dimensional matrix of weights that is moving alongside three
   dimensions (width, height, and time) of the input, and is therefore referred
-  to as 3d-Convolution. The output of a convolutional layer for each region is
-  computed as the dot product of the filter and the input region. A
-  convolutional layer is typically parametrised by the number, size and stride
-  of filters.
+  to as 3d-convolution. The output of a convolutional layer for each region is
+  computed as the dot product of the filter and the input region. 
 
   % TODO: parameterisation with stride, padding
-  % TODO: figure for convolution?
 
   While the theory behind CNNs was already established in the
   1980s~\cite{lenet}, practical applications were limited by the lack of
@@ -676,8 +673,10 @@
   of $16 \times 16$.
 
   \textbf{EfficientNet V2} was introduced by Tan et al.~\cite{efficientnetv2} in
-  2021.The main contribution of EfficientNet V2 is the efficient inverted
-  bottleneck block, that also underlies MobileNet V3~\cite{mobilenetv3}.
+  2021. It is the successor of EfficientNet~\cite{efficientnet}, which was
+  introduced in 2019. The main contribution of EfficientNet V2 is the efficient
+  inverted bottleneck block, that also underlies MobileNet
+  V3~\cite{mobilenetv3}.
 
   \textbf{ConvNext} is the most recent model in this work. It was introduced by
   Wang et al.~\cite{convnext} in 2021, producing state-of-the-art results.
@@ -692,40 +691,65 @@
   \textbf{X3D} was introduced by Feichtenhofer et al.~\cite{x3d} in 2020.
   \textit{TBD}.
 
+  % cnns
+  CNNs are a class of deep neural networks that are applied to analyse visual
+  imagery. They are composed of several layers of alternating convolutional and
+  pooling filters, which are applied to the input image to extract high-level
+  feature representations. These high-level feature representations are then fed
+  into a fully connected neural network (FCNN), which outputs a probability
+  distribution over the location labels.
+
+  For a video classification model, all $N$ consecutive frames are independently
+  passed through a CNN module. The sequence of high-level feature
+  representations is then fed into a recurrent neural network (RNN), which
+  outputs a probability distribution over the location labels for each frame by
+  placing a fully connected layer (classification head) to the output vector
+  associated to each frame in the RNN module. 
+
+  % rnns
+  A recurrent neural network (RNN)
+  is a class of deep neural networks that is applied to analyse sequential data.
+  Although they are mostly applied to natural language processing tasks, the
+  generality of their architecture allows to also apply them to computer vision
+  tasks with sequential data, such as a sequence of frames in video
+  classification. For each input $x_i$ in a sequence of inputs, the RNN computes
+  an output as a function of the current input $x_i$ and a hidden state
+  $h_{i-1}$ that is computed as a function of all previous inputs. In that way,
+  the RNN can learn to model the temporal dependencies between frames, e.g.
+  consider that all previous frames were predicted to be at one specific
+  location, and therefore the current frame is also likely to be at that
+  location.
+
   % subsection models (end)
 
   \subsection{Training} % (fold)
   \label{sub:training}
 
   All models were implemented using the PyTorch framework~\cite{pytorch} and the
-  training was performed remotely on the high performance cluster (HPC) of the
-  IT University of Copenhagen. The HPC consists of multiple computing nodes. For
-  this training, a single node was used with GPU acceleration. For more details
-  on the hardware specifications see the Appendix (Section~\ref{sec:appendix}).
-
-  During training, all models were evaluated using the standard multi-class loss
-  function cross-entropy loss (Equation~\ref{eq:cross-entropy}), which is
-  defined as,
+  training was performed locally on a MacBook Pro M1 with 16GB of memory and
+  MPS-acceleration enabled (where possible\footnote{MobileNet-V3-based models do
+  not support GPU acceleration}) to allow for fast experiment iteration. The
+  loss function $\mathcal{L}$ used for all models was cross-entropy loss
+  (Equation~\ref{eq:cross-entropy}), which
+  is a standard loss function for multi-class classification problems.
 
   \begin{equation}
-    \mathcal{L}(\hat{\mathbf{y}},\mathbf{y}) = -\sum_{i=1}^{L} \mathbf{y}_i
-    \log(\hat{\mathbf{y}}_i) \quad .
+    \mathcal{L}(\hat{y},y) = -\sum_{i=1}^{K} y_i \log(\hat{y}_i)
     \label{eq:cross-entropy}
   \end{equation}
 
   % TODO: compare to pytorch cross-entropy loss (is it the same? what is the
   % difference to nll?)
-
-  Here, $\hat{\mathbf{y}}$ is the predicted probability distribution over the $L$
-  location labels and $\mathbf{y}$ is the one-hot encoded ground truth location
-  label. 
-
-  All models were trained using the AdamW~\cite{adamw} optimiser with default
-  parameters, except for the learning rate, which was set to a constant of
-  $1e^{-4}$. The batch size was set to 32 for all image classifiers and 4 for
-  all video classifiers due to memory limitations. Unless otherwise specified,
-  all image and video classifiers were trained with the same set of training
-  hyper-parameters, which are specified in Table \ref{tab:default-hyperparams}. 
+  Here, $\hat{y}$ is the predicted probability distribution over the $K$ classes
+  and $y$ is the one-hot encoded ground truth label. The models were trained
+  using the AdamW~\cite{adamw} optimiser with default parameters, except for the
+  learning rate, which was set to a constant of $1e^{-4}$. Step-wise learning
+  rate scheduling was used for all models, which reduced the learning rate by a
+  factor of 10 every 5 epochs. The batch size was set to 32 for all image
+  classifiers and 8 for all video classifiers for memory-optimal training.
+  Unless otherwise specified, all image and video classifiers were trained with
+  the same set of training hyper-parameters, which are specified in Table
+  \ref{tab:default-hyperparams}. 
 
   \begin{table}[ht]
     \centering
@@ -748,58 +772,92 @@
   \subsection{Evaluation} % (fold)
   \label{sub:evaluation}
 
-  To assess all models in terms of their performance and efficiency on the task
-  of location classification, a series of different performance and efficiency
-  metrics are computed. All metrics are computed on the test set, which was
-  separated from the original dataset before training, as described in
-  Section~\ref{sub:raw-data}.
+  The goal of the evaluation is to have a rigorous comparison of the different
+  models and to determine the best model for the task of location
+  classification. In this context, a ``well-performing'' model is not just the
+  model that is most accurate in most cases, but also the model that is most
+  robust to a wide-range of different natural variations that can occur and that
+  is efficient. To achieve this, a series of \textit{quantitative} and
+  \textit{qualitative} experiments are performed on the models, which are then
+  used in Section~\ref{sec:results} and Section~\ref{sec:discussion}.
 
-  The accuracy of the models is evaluated using the standard multi-class top-1
-  and top-3 accuracy metric. It is the ratio of samples, for which the correct
-  label is among the top-1 or top-3 predictions, respectively. As some location
-  labels are naturally underrepresented in the dataset due to the natural
-  variation in size of the different locations, the macro F1-score is used to
-  compute a more fine-grained metric that gives more weight to
-  resource-constrained locations. The macro F1-score is the average of the
-  class-specific F1-scores, which are defined as the harmonic mean of precision
-  $P_i$ and recall $R_i$. All performance metrics where computed using the
-  TorchEval library~\textit{[CITE]}.
+  \textbf{Quantitative Experiments.} To quantitatively assess the performance of
+  the model on the task of location classification, the models were evaluated on
+  the test set using a wide-range of different performance metrics. To assess
+  the overall accuracy of the model, two metrics are computed:
+  \textbf{Multi-class Accuracy} (Equation~\ref{eq:accuracy}) is the most
+  wide-spread performance metric in classification task and is defined as the
+  number of correct predictions divided by the total number of predictions.
+  It gives a good first indication for the overall performance of the model, but
+  can be misleading in cases where the dataset is imbalanced.
 
-  To assess the efficiency of the models a series of benchmarks were performed
-  on the HPC. The benchmarks were performed using the \texttt{PyTorch Benchmark}
-  library~\textit{pytorch-benchmark}. From the set of all computed metrics, the
-  mean inference time per sample (latency) and mean number of samples per second
-  (throughput) were considered in the evaluation, as they were found most
-  critical for this study's purpose. 
+  \begin{equation}
+    \text{Multi-class Accuracy} = \frac{1}{N} \sum_{i=1}^{N} \mathbb{I}(y_i =
+    \hat{y}_i) 
+    \label{eq:accuracy}
+  \end{equation}
 
-  Due to different nature of the underlying datasets $D_f$ and $D_v$, the
-  performance and efficiency metrics are not directly transferable. For example,
-  the top-1 accuracy of the image classifiers is the number of correctly
-  predicted frames, whereas the top-1 accuracy of the video classifiers is the
-  number of correctly predicted videos. While this limits the comparability of
-  the metrics, it is still possible to draw conclusion between the different
-  model types due to the relatively large number of samples and the natural
-  resemblance of frames and clips.
+  Here, $\mathbb{I}$ is an indicator that is 1 if the condition is true and 0
+  otherwise. On top of the standard, multi-class accuracy, a variant of the
+  formula, the \textbf{Top-3 Multi-class Accuracy} is also computed, which
+  counts a prediction as correct if the correct label is one of the top-3
+  predicted labels.
 
-  To analyse the model behaviour in more detail, the models were also evaluated
-  qualitatively by manually inspecting the confusion matrix and a subset of the
-  misclassified samples for the best-performing single-frame and video
-  classification model. 
+  As some location labels are underrepresented in the dataset due to the natural
+  variation in size of the different locations, the \textbf{Macro F1-Score} is
+  used to compute a more fine-grained metric. The Macro F1-Score is the average
+  of the class-specific F1-scores, which are defined as the harmonic mean of
+  precision $P_i$ and recall $R_i$ (Equation~\ref{eq:macro-f1}).
 
-  % Furthermore, the \texttt{GradCam}~\cite{gradcam} algorithm was used to gain
-  % insights into the internal functioning of the model. GradCam is a technique
-  % that backtracks the activations in the convolutional filters of the model at
-  % some depth in the model's architecture and through the gradients of the model
-  % to the input image. This allows to visualise the regions of the image that
-  % were most relevant for the model to make its prediction. In this scenario, it
-  % is hoped that the highlighted regions can be used to understand what types of
-  % features the model is looking for in the image and what types of features it
-  % is not looking for. This can be used to identify potential issues with the
-  % model and to gain insights into how the model can be improved.
+  \begin{equation}
+    \text{Macro F1-Score} = \frac{1}{N} \sum_{i=1}^{N} \frac{2 \cdot P_i \cdot 
+    R_i}{P_i + R_i}
+    \label{eq:macro-f1}
+  \end{equation}
+
+  Here, $P_i$ and $R_i$ are the precision and recall for class $i$, which are 
+  defined as follows (Equation~\ref{eq:precision}) and (Equation~\ref{eq:recall}).
+
+  \begin{equation}
+    P_i = \frac{TP_i}{TP_i + FP_i}
+    \label{eq:precision}
+  \end{equation}
+
+  \begin{equation}
+    R_i = \frac{TP_i}{TP_i + FN_i}
+    \label{eq:recall}
+  \end{equation}
+
+  Here, $TP_i$ is the number of true positives for class $i$, $FP_i$ is the
+  number of false positives for class $i$ and $FN_i$ is the number of false
+  negatives for class $i$. 
+
+  On top of the standard metrics for classification, efficiency of the model is
+  crucial for usability of the system on low-resource devices, such as mobile
+  phones. For this reason, the \textbf{Inference Time} per sample is measured, 
+  the \textbf{GFLOPS} per predicted sample is computed and the \textbf{Model
+  Size} is measured to assess the memory constraints imposed by the model.
+
+  \textbf{Qualitative Experiments.} Purely quantitatively assessing a model's
+  performance may not be sufficient to truly determine the strengths and
+  weaknesses of the model. For this reason, the models were also evaluated
+  qualitatively by manually inspecting the misclassified samples and
+  the predictions of the models on a sub-set of $20$ test frames. 
+  Furthermore, the \texttt{GradCam}~\cite{gradcam} algorithm was used to gain 
+  insights into the internal functioning of the model. GradCam is a technique
+  that backtracks the activations in the convolutional filters of the model at
+  some depth in the model's architecture and through the gradients of the model
+  to the input image. This allows to visualise the regions of the image that
+  were most relevant for the model to make its prediction. In this scenario, it
+  is hoped that the highlighted regions can be used to understand what types of
+  features the model is looking for in the image and what types of features it
+  is not looking for. This can be used to identify potential issues with the
+  model and to gain insights into how the model can be improved.
 
   % subsection evaluation (end)
 
   % section methodology (end)
+
 
   \section{Results} % (fold)
   \label{sec:results}
@@ -810,45 +868,57 @@
   The series of experiments conducted within this study show that computer
   vision models, when carefully designed and trained, are generally capable of
   solving the task of indoor localisation when phrased as a coarse-grained
-  classification problem. X shows the results
-  of the performance and efficiency metrics of all models.
+  classification problem. Table~\ref{tab:results-experiment1} shows the results
+  of the performance and efficiency metrics of all models (see
+  Table~\ref{tab:models}).
 
   \begin{table}[ht]
-    \begin{tabular}{cllll|llll}
-    \toprule
-    & \multirow{2}{*}{\textbf{Model}} 
-    & \bfseries Acc@1 & \bfseries Acc@3 & \bfseries Ma.-F1 & \bfseries FLOPs &
-      \bfseries Latency & \bfseries Throughput \\
-    & & (\%) & (\%) & (\%) & (G) & (ms/Pred) & (Preds/s) \\
-    \midrule
-    \multirow{8}{*}{\rotatebox[origin=c]{90}{Single Frame}}
-    & AlexNet & 56.67 & 81.36 & 50.79 & 0.71 & 14.1 & 70.91 \\
-    & Google LeNet & 63.40 & 84.74 & 56.80 & 1.97 & 47.2& 21.17 \\
-    & DenseNet121 & 67.79 & 83.04 & 63.05 & 2.88 & 71.9 & 13.89 \\
-    & ResNet18 & 70.65 & 89.73 & 64.84 & 1.82 & 27.1 & 37.22 \\
-    & ResNet 50 & 55.76 & 77.65 & 50.05 & 4.12 & 60.9 & 16.41 \\
-    & MobileNet V3 Small & 28.68 & 51.34 & 19.21 & 0.06 & \bfseries 11.9 & \bfseries 83.82 \\
-    & ViT B-16 & 53.20 & 77.57 & 47.54 & 17.59 & 166.0 & 6.03 \\
-    & EfficientNet V2 Small & 50.51 & 81.73 & 41.71 & 2.88 & 77.6 & 12.91 \\
-    \midrule
-    \multirow{2}{*}{\rotatebox[origin=c]{90}{Video}}
-    & R(2+1)D & \bfseries 78.33 & \bfseries 91.67 & \bfseries 75.27 & \bfseries 93.72 & 825.1 & 1.22 \\
-    & X3D & 68.89 & 81.11 & 54.09 & 2.85 & 229.0 & 4.37 \\
-    \bottomrule
+    \centering
+    \begin{tabular}{clllllll}
+      \toprule
+      & \multirow{2}{*}{\textbf{Model}} 
+      & \textbf{1-Acc.} & \textbf{3-Acc.}& \textbf{Ma.-F1} & \textbf{Par.} & \textbf{FLOPs} & \textbf{Throughput} \\
+      & & (\%) & (\%) & (\%) & (M) & (G) & (Preds/s) \\
+      \midrule
+    \multirow{4}{*}{\rotatebox[origin=c]{90}{Image}} &
+        \texttt{alexnet} & 60.15 & 84.42 & 55.95 & 57.09 & 0.71 & \bfseries
+        87.31 ($\pm$ 1.15) \\
+      & \texttt{resnet18} & 71.39 & 91.70 & \bfseries 68.29 & 11.19 & 1.82 &
+      64.12 ($\pm$ 1.90) \\
+      & \texttt{resnet50} & 58.37 & 82.63 & 55.92 & 23.55 & 4.12 & 27.57 ($\pm$ 1.10) \\
+      & \texttt{mobilenet\_v3} & 29.37 & 64.11 & 14.87 & 1.54 & 0.06 &
+      16.49 ($\pm$ 1.44) \\
+
+      \midrule
+
+      \multirow{4}{*}{\rotatebox[origin=c]{90}{Video}}
+      & \texttt{alexnet-lstm} & 32.60 & 62.19 & 9.95 & \bfseries 58.58 & 3.57 &
+      38.31 ($\pm$ 0.53) \\
+      & \texttt{alexnet-rnn} & 50.00 & 78.90 & 35.71 & 58.19 & 3.56 & 39.09
+      ($\pm$ 0.51) \\
+      & \texttt{resnet18-lstm} & \bfseries 72.19 & 91.78 & 64.59 & 11.84 &
+        \bfseries 9.11 & 19.66 ($\pm$ 0.40) \\
+      & \texttt{resnet18-rnn} & 70.14 & \bfseries 93.97 & 66.62 & 11.44 & 9.11 &
+      19.07 ($\pm$ 0.56) \\
+
+      \bottomrule
     \end{tabular}
 
-    \caption{ 
-      \textbf{Results.} The table the performance and efficiency metrics for all
-      trained models. The models are grouped by their type (single-frame or
-      video). The performance metrics are the top-1 accuracy (Acc@1), top-3
-      accuracy (Acc@3) and Macro F1-Score (Ma.-F1). The efficiency metrics are
-      the number of floating point operations (FLOPs) per inference, the mean
-      inference time in milliseconds per prediction (Latency) and the mean
-      number of predictions per second (Throughput). The best performing model
-      in each category is highlighted in bold. The metrics are computed on the
-      test set of the respective dataset. 
+    \caption{
+      \textbf{Results.} The table shows a series of performance and efficiency
+      metrics for the models trained in the first experiment. Here,
+      \texttt{1-Acc} and \texttt{3-Acc} refer to the Top-1 and Top-3 Accuracy
+      scores respectively, \texttt{Ma.-F1} refers to the Macro-F1 score,
+      \texttt{Par.} refers to the number of parameters in the model, \texttt{FLOPs}
+      refers to the number of floating point operations required to make a
+      prediction and \texttt{Throughput} refers to the number of predictions
+      that can be made per second. The values for \texttt{Throughput} are
+      averaged over $10$ runs and the standard deviation is reported in
+      parentheses. The best performing model for each metric is highlighted in
+      bold.
     }
-    \label{fig:results} 
+
+    \label{tab:results-experiment1}
   \end{table}
 
   \subsection{Detailed Analysis} % (fold)
@@ -876,10 +946,10 @@
   (1.54M), the model does not seem complex enough to learn meaningful features
   in the dataset.
 
-  \begin{figure}
+  \begin{figure}[ht]
     \begin{center}
       \includegraphics[width=0.65\textwidth]
-      {./figures/performance-metrics.png}
+      {./figures/itu.jpg}
     \end{center}
 
     \caption{
@@ -906,10 +976,10 @@
   Figure~\ref{fig:performance-efficiency-trade-off} shows the Top-1 Test
   Accuracy of all models against the number of parameters.
   
-  \begin{figure}
+  \begin{figure}[ht]
     \centering
-    \includegraphics[width=\textwidth]{
-    ./figures/performance-efficiency-tradeoff-scatter.png}
+    \includegraphics[width=\textwidth]{./figures/itu.jpg}
+
     \caption{
       \textbf{Performance-Efficiency Trade-Off.} The three Figures show the
       Top-1 Accuracy (\%) against (a) the number of parameters, (b) the number
@@ -960,6 +1030,40 @@
   merely increases the model complexity and inference time, which make it
   overall inferior to their pure CNN counterparts.
 
+  \subsection{Data Efficiency} % (fold)
+  \label{sub:Data Efficiency}
+
+  Approaching indoor localisation as a classification task, means to frame it as
+  a supervised learning problem. Supervised learning requires human-annotated
+  training data, which can be prohibitive to obtain in large quantities. For the
+  proposed approach to be valid, minimal effort in the initial data collection
+  and annotation should be required. For this reason, the second experiment
+  tries to find an answer for the research question: \textit{ ``How much data
+  is necessary to achieve good performance''}. To answer this question, a single
+  image and video classifier are chosen and trained on different subsets of the 
+  training data. The subsets include $10\%$, $20\%$, $30\%$, $40\%$, $50\%$,
+  $60\%$, $70\%$, $80\%$, $90\%$ and $100\%$ of the training data. The models 
+  are then evaluated as outlined in Section~\ref{sub:evaluation} to find the
+  natural drop-off in performance as the amount of training data decreases.
+
+
+  % data-efficient learners (figure: ratio-vs-performance)
+
+  \begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{./figures/itu.jpg}
+    \caption{
+      \textbf{Data Efficiency.} The figure shows the performance of the baseline
+      model \texttt{resnet18} when trained on different training data metrics.
+    }
+    \label{fig:data-efficiency}
+  \end{figure}
+  
+  
+  % subsection subsection name (end)
+
+  
+  
   % subsection subsection name (end)
   
   \subsection{Analysing Failing Scenarios: Mispredicted Samples} % (fold)
@@ -973,12 +1077,12 @@
   \begin{figure}[ht]
     \centering
     \begin{subfigure}[b]{0.45\textwidth}
-      \includegraphics[width=\textwidth]{./figures/conf-matrix-resnet18.png}
-      \caption{ResNet18}
+      \includegraphics[width=\textwidth]{figures/itu.jpg}
+      \caption{Unnormalised Confusion Matrix}
     \end{subfigure}
     \begin{subfigure}[b]{0.45\textwidth}
-      \includegraphics[width=\textwidth]{./figures/conf-matrix-r(2+1)d.png}
-      \caption{R(2+1)D}
+      \includegraphics[width=\textwidth]{figures/itu.jpg}
+      \caption{Row-Normalised Confusion Matrix}
     \end{subfigure}
     \caption{
       \textbf{ResNet18 Confusion Matrix.} The figure shows the (a) unnormalised
@@ -1105,8 +1209,7 @@
 
   Further, the precise configuration and results of the experiments that are
   reported here are publicly available on the Weights \& Biases platform at the
-  following link:\\
-  \url{https://wandb.ai/mikasenghaas/bsc}.
+  following link: \url{https://wandb.ai/mikasenghaas/bsc}.
 
   % subsection reproducibility (end)
 
