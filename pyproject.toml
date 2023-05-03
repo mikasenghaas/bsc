@@ -22,6 +22,7 @@ grad-cam = "^1.4.6"
 torcheval = "^0.0.6"
 calplot = "^0.1.7.5"
 pytorch-benchmark = "^0.3.4"
+pytorchvideo = "^0.1.5"
 
 
 [tool.poetry.group.dev.dependencies]

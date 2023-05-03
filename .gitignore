@@ -1,8 +1,9 @@
 # Custom
 
 # Ignore Directories
-**/data/processed/*
-**/data/raw/*
+**/data/**/*
+**/data/**/*
+!**/data/*.zip
 models
 artifacts
 wandb
