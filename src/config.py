@@ -18,6 +18,9 @@ DEVICE: str = (
     else "cpu"
 )
 
+# WANDB
+WANDB_PROJECT: str = "bsc"
+
 # PATHS
 BASEPATH: str = "/".join(os.path.abspath(__file__).split("/")[:-2])
 RAW_DATA_PATH: str = os.path.join(BASEPATH, "data", "raw")

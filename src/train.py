@@ -14,7 +14,7 @@ from transform import ImageTransform, VideoTransform
 from defaults import DEFAULT
 from modules import MODULES
 
-from config import ARTIFACTS_PATH
+from config import WANDB_PROJECT, ARTIFACTS_PATH
 
 from utils import (
     end_task,
@@ -336,7 +336,7 @@ def main():
     start_task("Initialising W&B")
     if args.wandb_log:
         wandb.init(
-            project="bsc-2",
+            project=WANDB_PROJECT,
             group=args.wandb_group if args.wandb_group else None,
             name=args.wandb_name if args.wandb_name else None,
             tags=args.wandb_tags if args.wandb_tags else None,

@@ -2,7 +2,6 @@
 #  by: mika senghaas
 
 import os
-import re
 import warnings
 
 import torch
@@ -13,13 +12,9 @@ import torcheval.metrics.functional as metrics
 from pytorch_benchmark import benchmark
 
 import wandb
-from config import (
-    BASEPATH,
-    DEVICE,
-)
+from config import BASEPATH, WANDB_PROJECT
 from utils import start_task, end_task, load_eval_args, load_json
 
-from defaults import DEFAULT
 from modules import MODULES
 
 # ignore deprecation warnings in torcheval
@@ -53,7 +48,7 @@ def main():
     # load artifact from wandb
     start_task(f"Loading {args.model}:{args.version}")
     api = wandb.Api()
-    artifact_path = f"mikasenghaas/bsc-2/{args.model}:{args.version}"
+    artifact_path = f"mikasenghaas/{WANDB_PROJECT}/{args.model}:{args.version}"
     artifact = api.artifact(artifact_path, type="model")
 
     # download artifact locally
