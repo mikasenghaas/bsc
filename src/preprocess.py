@@ -65,6 +65,7 @@ def main():
         for clip_id, (start, end) in enumerate(clips_boundaries):
             # extract label depending on clip time
             label = get_label(start, annotations)
+            clip_id = str(clip_id+1).zfill(2)
 
             # create destination directory
             image_destination_path = os.path.join(IMAGE_DATA_PATH, args.split, label)
@@ -80,37 +81,37 @@ def main():
                 f"-y "
                 f"-i {video_path} "
                 f'-vf scale="{args.crop_size}:{args.crop_size}" '
-                f"{'-r 1 ' if args.split == 'train' else ''}"
+                f"{'-r 5 ' if args.split == 'train' else ''}"
                 f"-t {end-start} "
-                f"{image_destination_path}/{video_id}_{clip_id+1}_%03d.jpg"
+                f"{image_destination_path}/{video_id}_{clip_id}_%03d.jpg"
             )
             pbar.set_description(f"Extracting {video_id} ({args.split}) : IMG ")
             os.system(ffmpeg_extract_images)
 
             # extract video clips (max. length)
-            sub_seconds = list(range(start, end, args.vid_length)) + [end]
-            sub_bounds = [
-                (sub_seconds[i], sub_seconds[i + 1])
-                for i in range(len(sub_seconds) - 1)
-            ]
-            for subclip_id, (clip_start, clip_end) in enumerate(sub_bounds):
-                # video with 30fps for train and test
-                ffmpeg_extract_video = (
-                    f"ffmpeg "
-                    f"-loglevel error "
-                    f"-ss {clip_start} "
-                    f"-y "
-                    f"-i {video_path} "
-                    f'-vf scale="{args.crop_size}:{args.crop_size}, setdar=1:1" '
-                    f"-t {clip_end-clip_start} "
-                    f"{video_destination_path}/{video_id}_{clip_id+1}_{subclip_id+1}.mp4"
-                )
-                pbar.set_description(
-                    f"Extracting {video_id} ({args.split}) : VID {clip_id}/{subclip_id}"
-                )
+            # sub_seconds = list(range(start, end, args.vid_length)) + [end]
+            # sub_bounds = [
+            #     (sub_seconds[i], sub_seconds[i + 1])
+            #     for i in range(len(sub_seconds) - 1)
+            # ]
 
-                # run command
-                os.system(ffmpeg_extract_video)
+            # video with 30fps for train and test
+            ffmpeg_extract_video = (
+                f"ffmpeg "
+                f"-loglevel error "
+                f"-ss {start} "
+                f"-y "
+                f"-i {video_path} "
+                f'-vf scale="{args.crop_size}:{args.crop_size}, setdar=1:1" '
+                f"-t {end-start} "
+                f"{video_destination_path}/{video_id}_{clip_id}.mp4"
+            )
+            pbar.set_description(
+                f"Extracting {video_id} ({args.split}) : VID {clip_id}"
+            )
+
+            # run command
+            os.system(ffmpeg_extract_video)
 
     end_task("Processing Raw Videos", start_timer)
 
