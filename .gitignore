@@ -1,12 +1,12 @@
 # Custom
 
 # Ignore Directories
-**/data/**/*
-**/data/**/*
-!**/data/*.zip
 models
 artifacts
 wandb
+data/**/*
+data/**/*
+!data/*.zip
 
 # Ignore Tex Build, except compiled PDF
 report/build/*
