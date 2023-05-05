@@ -564,6 +564,11 @@
   y_1), ..., (f_{n_f}, y_{n_f})\}$, and the final video dataset as $D_V =
   \{(c_1, y_1), ..., (c_{n_v}, y_{n_v})\}$.
 
+  % TODO: add statistics about nf and nv (number of frames and clips in train
+  % and test)
+  % TODO: mention that frames where sampled at a rate of 1FPS for train and
+  % 30FPS for test
+
   % subsection data-preprocessing (end)
 
 
@@ -767,10 +772,11 @@
 
   To assess the efficiency of the models a series of benchmarks were performed
   on the HPC. The benchmarks were performed using the \texttt{PyTorch Benchmark}
-  library~\textit{pytorch-benchmark}. From the set of all computed metrics, the
-  mean inference time per sample (latency) and mean number of samples per second
-  (throughput) were considered in the evaluation, as they were found most
-  critical for this study's purpose. 
+  library~\textit{pytorch-benchmark}. The library allows to track various
+  metrics during unbatched and batched inference. Results are aggregated over 5
+  passes and the mean and standard deviation are reported. Out of all computed
+  metrics, the mean inference time per sample (latency) and mean number of
+  samples per second (throughput) were further considered.
 
   Due to different nature of the underlying datasets $D_f$ and $D_v$, the
   performance and efficiency metrics are not directly transferable. For example,
@@ -807,11 +813,10 @@
   % computer vision models are capable of solving indoor localisation when
   % phrased as a classification task
 
-  The series of experiments conducted within this study show that computer
-  vision models, when carefully designed and trained, are generally capable of
-  solving the task of indoor localisation when phrased as a coarse-grained
-  classification problem. X shows the results
-  of the performance and efficiency metrics of all models.
+  We show that computer vision models, when carefully designed and trained, are
+  generally capable of solving the task of indoor localisation when phrased as a
+  coarse-grained classification problem. The results of the evaluation are
+  presented in Table~\ref{tab:results}.
 
   \begin{table}[ht]
     \begin{tabular}{cllll|llll}
@@ -848,179 +853,324 @@
       in each category is highlighted in bold. The metrics are computed on the
       test set of the respective dataset. 
     }
-    \label{fig:results} 
+    \label{tab:results} 
   \end{table}
 
-  \subsection{Detailed Analysis} % (fold)
-  \label{sub:Detailed Analysis}
+  \subsection{Detailed Analysis of Single-Frame Classifiers} % (fold)
+  \label{sub:analysis-single-frame-classifiers}
 
-  The best performing model in terms of classification performance are the
-  Resnet18-based models. The pure CNN module reaches a maximal Macro F1-Score 
-  of 68.29\% and a Top-1 Accuracy of 71.39\%. Stacking a RNN leads to slight
-  decreases in the performance (-1.67\%, -1,25\%), while stacking a LSTM layer
-  leads to slight increases in Top-1 Accuracy (+0.8\%) and a more significant
-  decrease in Macro-F1 (-3,7\%). ResNet50 performs worse than ResNet18, with a
-  maximal Macro-F1 of 55.92\% and a Top-1 Accuracy of 58.37\%. The increased
-  number of parameters does not seem to be necessary given the complexity (and
-  small size) of the dataset.
-  Despite the higher number of parameters, AlexNet performs worse than ResNet18,
-  with a maximal Macro-F1 of 55.95\% and a Top-1 Accuracy of 60.15\%. The
-  architectural differences, specifically the lack of residual connections, are
-  hypothesised to be the major cause for the drop in performance. Interestingly,
-  by stacking a RNN or LSTM layer on top of the AlexNet module, classification
-  performance drops sharply. With a RNN, the Macro F1-Score drops to 35,71\%
-  (-20.24\%) and with a LSTM, the Macro F1-Score drops to 9.95\% (-46.00\%),
-  barely better than a random guess.
-  MobileNet-V3 performs the worst, with a maximal Macro-F1 of 14.87\% and a
-  Top-1 Accuracy of 29.37\%. Given the significantly lower number of parameters 
-  (1.54M), the model does not seem complex enough to learn meaningful features
-  in the dataset.
+  % single-frame classifiers are capable of solving the task
+  Surprisingly, even simple single-frame classification models are capable of
+  providing a reasonable solution to the task of indoor localisation. Despite
+  the lack of information about the temporal context of the frames, the
+  best-performing single-frame classifier (ResNet18) achieves a top-1 accuracy
+  of 70.65\% and a top-3 accuracy of 89.73\%. This is a significant result as it
+  shows that processing single frames of the video is sufficient to solve the
+  task of indoor localisation. This is especially important in the context of
+  mobile devices, and application where live inference is required.
+
+  % single-frame classifiers are efficient
+  Out of the single-frame classifiers, three classifiers can produce real-time
+  predictions on a mobile device, as the have a higher throughput rate than
+  video frame rate. The most efficient model is MobileNet V3 with a throughput of
+  83.82 predictions per second. AlexNet and ResNet18 are also capable of
+  real-time inference with throughputs of 70.91 and 37.22 predictions per
+  second, respectively. All other models are not capable of real-time inference
+  on a mobile device, but are sufficiently quick to provide near real-time
+  predictions.
+
+  % model complexity vs. performance
+  Evidence in computer vision research suggests that more complex models
+  typically are able to achieve better performance. This is not entirely the
+  case for this study. The smallest model, MobileNet V3, is a clear outlier in
+  terms of performance, only achieving a top-1 accuracy of 28.68\%. It is
+  hypothesised that the model is not complex enough to handle the challenging
+  20-class classification task.
+
+  Performance steadily increases with the number of parameters up to the
+  complexity of ResNet18 (11.2M), but then decreases again. Interestingly, the
+  most complex model in terms of the total number of parameters, ViT-B-16
+  (85.8M), which achieves state-of-the-art results on common image
+  classification benchmarks, is not the best-performing model in this study.
+  This is likely due to the small size of the dataset in combination with
+  relatively few training epochs. 
+
+  % end subsection analysis-single-frame-classifiers
+
+  \subsection{Detailed Analysis of Video Classifiers} % (fold)
+  \label{sub:detailed-analysis-of-video-classifiers}
+
+  As the nature of the task is inherently temporal, it is not surprising that
+  video classifiers outperform single-frame classifiers
+  (Figure~\ref{fig:performance-metrics}). The best performing video classifier is
+  R(2+1)D with a top-1 accuracy of 78.33\% and a top-3 accuracy of 91.67\%. This
+  is a significant improvement over the best performing single-frame classifier,
+  ResNet18. The video classifiers are more robust to noise in the input data, as
+  they are able to leverage the temporal context of the video. For example, the
+  model is capable of predicting a clip correctly despite a few frames being
+  occluded by a person walking through the scene or other sources of noise. This
+  capability has proven especially useful in the context of indoor localisation,
+  as high variation in the environment and therefore high noise in the input
+  data is common.
+
+  % video classifiers are less efficient
+  Video classifiers generally require more compute and memory resources during
+  inference, as they have to keep a history of the previous frames in memory.
+  This is reflected in the efficiency metrics. R2+1D has a throughput of only
+  1.22 predictions per second. This means that it can only provide predictions
+  for the location every second. This makes the model slower in responding to
+  sudden changes in the environment.
+
+  % subsection detailed analysis of video classifiers (end)
 
   \begin{figure}
     \begin{center}
-      \includegraphics[width=0.65\textwidth]
+      \includegraphics[width=.95\textwidth]
       {./figures/performance-metrics.png}
     \end{center}
 
-    \caption{
-    \textbf{Performance Metrics.} The three classification performance metrics
-    are shown for all models in a grouped bar chart.
-    }
+    \caption{\textbf{Performance Metrics.} The Figure shows the performance
+      metrics, Macro F1, Top-1 Accuracy and Top-3 Accuracy, for all trained
+      models on the test split. A grey, dotted line separates the single-frame
+      classifiers (left) from the video classifiers (right). Within their group,
+      models are sorted from left to right by their Top-1 Accuracy.}
 
     \label{fig:performance-metrics}
   \end{figure}
 
   \subsection{Performance Efficiency Trade-Off} % (fold)
-  \label{sub:Performance Efficiency Trade-Off}
+  \label{sub:tradeoff}
 
-  The general trend in deep learning is that increasing the number of
-  parameters, and thereby the complexity of the model, generally leads to better 
-  performance. In this experiment, higher model complexity was reached in two
-  ways: Firstly, by increasing the number of parameters in the CNN module, and,
-  secondly, by stacking a RNN or LSTM layer on top of the CNN module.
-  In order to investigate the performance-efficiency trade-off, the number of
-  parameters, the number of floating point operations and the throughput of all
-  models were measured and plotted against the Top-1 Test Accuracy. The results
-  are shown in Figure~\ref{fig:performance-efficiency-trade-off}.
+  The pre-dominant tendency in deep learning is that with sufficient data sizes
+  and compute resources, more complex models outperform simpler ones. However,
+  there is a trade-off between model complexity and efficiency, when inference
+  time is critical like when deployed on a mobile device. 
 
-  Figure~\ref{fig:performance-efficiency-trade-off} shows the Top-1 Test
-  Accuracy of all models against the number of parameters.
-  
+  Figure~\ref{fig:tradeoff} shows the Top-1 Test Accuracy of all models against
+  latency (left) and throughput (right). Latency and throughput are meaningful
+  metrics to assess model's efficiency, as they are a direct proxy for the
+  real-time inference speed when deployed on low-resource device. While the
+  benchmarks were computed on a desktop CPU, they give a good indication of the
+  relative performance of the models and allow to extrapolate the insights to
+  performance on a mobile device. It is to be noted that latency and throughput
+  are inversely proportional to each other: Less inference time per sample (low
+  latency) leads to a higher number of inferences per second (high throughput).
+  However, as inference times vary greatly between models, the two metrics are
+  plotted separately, as they highlight different tails of the distribution.
+  Specifically, the latency plot accentuates high latency models, while the
+  throughput plot highlights low latency models.
+
+  % latency-accuracy
+  In Figure~\ref{fig:tradeoff}a, R(2+1)D is a clear outlier. The model has the
+  highest latency, but also the best overall performance. The increase in
+  complexity over X3D seems to be justified, as the model achieves a 9.4\%
+  increase in Top-1 Accuracy, while only increasing the latency by 0.6 seconds.
+  A similar trend cannot be observed for the single-frame classifiers. As
+  latency times are close to each, their trend is easier to study in
+  Figure~\ref{fig:tradeoff}b. Here, a quadratic relationship between throughput
+  and accuracy can be observed for the single-frame classifiers.
+  High-complexity, but low-throughput models, like ViT-B-16, EfficientNet V2 S
+  and ResNet18 are outperformed by lower-complexity models. Similarly,
+  low-complexity, but high-throughput models, like MobileNet V3 and AlexNet,
+  show similarly low performance. The sweet spot in terms of throughput and
+  accuracy is ResNet18, which achieves a throughput of 37.22 predictions per
+  second and a top-1 accuracy of 72.92\% This phenomenon is best explained by
+  the fact that low-complexity models are not able to capture the complexity of
+  the task, while high-complexity models are not able to learn from the small
+  dataset. The video classification models defy this trend, as they are all
+  low-throughput, but high-performing.
+
   \begin{figure}
     \centering
     \includegraphics[width=\textwidth]{
     ./figures/performance-efficiency-tradeoff-scatter.png}
     \caption{
-      \textbf{Performance-Efficiency Trade-Off.} The three Figures show the
-      Top-1 Accuracy (\%) against (a) the number of parameters, (b) the number
-      of floating point operations and (c) the throughput (predictions per
-      second) for all models. The models are coloured according to their
-      CNN base module and the marker style indicates the type of RNN head.
-      The grey lines aid the visualisation of the development of
-      performance-efficiency trade-off with different recurrent modules.
+      \textbf{Performance-Efficiency Trade-Off.} The Figure visualises the
+      performance-efficiency trade-off for all models by plotting the
+      relationship between the Top-1 Accuracy against the latency (inference
+      time in milliseconds per prediction) and throughput (predictions per
+      second). Each model is given unique colour, and the marker type indicates
+      whether the model is a single-frame classifier (circle) or a video
+      classifier (cross).
     }
 
-    \label{fig:performance-efficiency-trade-off}
+    \label{fig:tradeoff}
   \end{figure}
 
-  It can be seen that higher model complexity generally does not lead to higher
-  performance. Both ResNet50 and AlexNet have significantly more parameters than
-  ResNet18, but perform worse. The picture is slightly different for the number
-  of floating points operations and throughput. As expected, ResNet50, due to
-  its higher number of parameters, requires more floating point operations
-  during inference, which leads to a lower throughput. However, AlexNet, despite
-  being almost 6x larger than ResNet18 in terms of pure parameter count, has a
-  lower number of floating point operations and a higher throughput. However,
-  since the base ResNet18 model already has a throughput of ~65 frames per
-  second, which is more frames per second than most modern cameras capture, the
-  throughput does not seem to be a limiting factor.
+  % subsection tradeoff (end)
 
-  % subsection subsection name (end)
+  \subsection{Analysing Prediction Patterns: Confusion Matrices} % (fold)
+  \label{sub:conf-matrices}
   
-  % subsection subsection name (end)
+  To better understand the strengths and weaknesses of deep learning models in
+  tackling the task of indoor classification, the two best performing models,
+  ResNet18 and R(2+1)D, are analysed in more detail. Specifically, the confusion
+  matrices of the two models are analysed to identify common failure modes of
+  the models.
 
-  \subsection{Temporal Dimension} % (fold)
-  \label{sub:Temporal Dimension}
+  Figure~\ref{fig:conf-matrix} shows the confusion matrices for (a) ResNet18 and
+  (b) R(2+1)D. It becomes clear that both models struggle with the same
+  misclassification scenarios. The most common misclassification is between the
+  two corridors on the ground floor (\textit{Ground Floor Corridor 1} and
+  \textit{Ground Floor Corridor 2}) and the Atrium (bottom-right grey
+  rectangle). ResNet18 both confuses the two corridors and has a tendency for
+  predicting the majority class (Atrium) instead of Corridor 2. R(2+1)D rarely
+  confuses the corridor, but has an even stronger tendency for predicting
+  Corridor 2 as Atrium. These failure cases are explained by the fact that the
+  two corridors and the Atrium are visually very similar. Furthermore, they are
+  directly adjacent to each other, which likely leads to some naturally
+  occurring failure cases at the border of the areas. Here, the model might
+  predict the new class earlier or later than the ground truth label changes.
 
-  One of the main difference in the trained models is whether or not they are
-  capable of processing the temporal nature of the video frames. It was
-  hypothesised that the CNN-RNN video classification models would perform better
-  due to an increased number of features and the ability to learn temporal
-  information from the video frames. The results show that this is not the case.
+  Another region with similar behaviour are the three libraries on the first
+  floor (\textit{First Floor Library}, \textit{First
+  Floor Library 2}, \textit{First Floor Library 3}). Especially ResNet18
+  struggles to distinguish between the three classes, which is understandable
+  given the fact that the dominating visual feature of the three classes are 
+  rows of bookshelves. R(2+1)D shows a similar, but less pronounced behaviour.
+  One explanation might be that while the shared visual feature of bookshelves,
+  the arrangement of the bookshelves is different in the three libraries, which
+  can be learned by R(2+1)D due to its temporal modelling capabilities.
 
-  Figure~\ref{fig:performance-efficiency-trade-off} not only shows the
-  performance-efficiency trade-off, but also the difference in performance and
-  efficiency between the base CNN modules and the CNN-RNN models. The grey lines
-  connect the base CNN module with the CNN-RNN model. It can be seen that adding
-  the RNN head leads to unchanged (ResNet18) or decreased (AlexNet) performance,
-  and significantly higher number of floating point operations and therefore
-  lower throughput. The analysis clearly shows that adding a RNN head does not
-  yield the desired effect of modelling the temporal dimension of the video
-  frames to increase the robustness of continuous predictions. Instead, it
-  merely increases the model complexity and inference time, which make it
-  overall inferior to their pure CNN counterparts.
-
-  % subsection subsection name (end)
-  
-  \subsection{Analysing Failing Scenarios: Mispredicted Samples} % (fold)
-  \label{sub:Analysing Failing Scenarios: Mispredicted Samples}
-
-  To better understand the strengths and weaknesses of the best-performing
-  model, a pure ResNet CNN module, the confusion matrix is analysed.
-  Figure~\ref{fig:resnet18-confusion-matrix} shows the confusion matrix of the
-  ResNet18 model.
-
-  \begin{figure}[ht]
+  \begin{figure}
     \centering
-    \begin{subfigure}[b]{0.45\textwidth}
+    \begin{subfigure}[b]{0.49\textwidth}
       \includegraphics[width=\textwidth]{./figures/conf-matrix-resnet18.png}
       \caption{ResNet18}
     \end{subfigure}
-    \begin{subfigure}[b]{0.45\textwidth}
+    \begin{subfigure}[b]{0.49\textwidth}
       \includegraphics[width=\textwidth]{./figures/conf-matrix-r(2+1)d.png}
       \caption{R(2+1)D}
     \end{subfigure}
     \caption{
-      \textbf{ResNet18 Confusion Matrix.} The figure shows the (a) unnormalised
-      and (b) row-normalised confusion matrix. For (a), the entry at row $i$ and
-      column $j$ shows the number of samples that belong to class $i$ but were
-      predicted to be class $j$. For (b), the entry at row $i$ and column $j$
-      shows}
-    \label{fig:resnet18-confusion-matrix}
+      \textbf{Confusion Matrices.} The Figure shows the confusion matrix for (a)
+      ResNet18 (best performing single-frame classifier) and (b) R(2+1)D (best
+      performing video classifier). The confusion matrix of ResNet18 is
+      normalised to show 1K samples per class for visual purposes. For both
+      matrices, the entry at row $i$ and column $j$ shows the number of samples
+      that belong to class $i$ but were predicted to be class $j$. Gray
+      rectangles indicate challenging classes, that are often confused.
+    }
+    \label{fig:conf-matrix}
+  \end{figure}
+
+  % TODO: add conf matrices with classes ordered by ground/ first floor
+  % similarity
+
+  \subsection{Analysing Failing Scenarios: Mispredicted Samples} % (fold)
+  \label{sub:mispredicted}
+
+  Figure~\ref{fig:mispredicted} shows three exemplary mispredicted samples for
+  (a) ResNet18 and (b) R(2+1)D. The respective legend shows the top 3 predicted
+  classes for each sample in order of confidence and the ground truth label. 
+
+  For ResNet18, the first sample shows a misclassification between the two
+  corridors on the ground floor, which is the most common misclassification for
+  ResNet18 as seen from the confusion matrix (Figure~\ref{fig:conf-matrix}a). It
+  can be seen, that the model is unsure about the prediction (64\% confidence in
+  Corridor 2 and 34\% confidence in Corridor 1). The second and third sample
+  show another common misclassification mode. Here the model confuses the 
+  the yellow and green area on the ground and first floor, respectively.
+
+  For R(2+1)D, the first sample shows a transition misprediction. The frame is
+  directly at the border between the Magenta Area and Corridor 2 on the ground
+  floor and predicts the Magenta Area, while the ground truth label is Corridor
+  2. The second sample shows a truly sample from a challenging video from the
+  test split, because the video shows an area that was freshly painted in blue
+  in Corridor 2. As the training split does not contain any videos from this
+  area, the model has never seen this area in blue and thus predicts a wrong
+  area, in this case the majority class Atrium. The third sample shows another 
+  misprediction of similar classes. The clip starts at the very end of the
+  entrance with the camera facing to the outside. The model predicts the yellow
+  entrance, when the ground truth label is the magenta entrance.
+
+
+  \begin{figure}
+      \centering
+    \begin{subfigure}[b]{\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{./figures/resnet18-mispredicted-frames.png}
+      \caption{ResNet18}
+    \end{subfigure}
+    \begin{subfigure}[b]{\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{./figures/r2plus1d-mispredicted-frames.png}
+      \caption{R(2+1)D}
+    \end{subfigure}
+    \caption{\textbf{Mispredicted Samples.} The Figure shows the mispredicted
+      samples for (a) ResNet18 and (b) R(2+1)D. The respective legend shows the
+      top 3 predicted classes for each sample in order of confidence and the
+      ground truth label. For the clips from the video classifier, the first
+      frame of the clip is shown.}
+    \label{fig:mispredicted}
   \end{figure}
   
-  % subsection Mispredicted Samples (end)
+  % subsection mispredicted (end)
 
-  \subsection{Extracting Characteristics of the Model using GradCam} % (fold)
-  \label{sub:Mispredicted Samples}
+  \subsection{Understanding Model Behaviour: Manual Inspection} % (fold)
+  \label{sub:manual}
 
-  % qualitative characteristics of resnet18: gradcam
+  Finally, the continuous predictions of the two best performing model, ResNet18
+  and R(2+1)D, are manually inspected on all videos in the test split. The
+  following qualitative observations were made:
 
-  % subsection Mispredicted Samples (end)
+  \begin{enumerate} 
+
+    \item \textbf{Prediction Robustness.} Both models show a high robustness to
+      temporal changes in the environment, such as changing lighting conditions,
+      different people in the scene or occlusions. This is especially true for
+      R(2+1)D, which is likely due to the temporal modelling capabilities of the
+      model. However, drastic changes in the environment, such as the repainting
+      of an entire region, lead to consistent mispredictions of the affected
+      area. This is a general drawback of localisation systems that solely rely
+      on the modality of vision. A noticeable difference in terms of the
+      sample-to-sample variance could be observed. ResNet18 is more prone
+      "jittering" predictions. This means that for challenging subclips, the
+      model is unsure about the prediction and the frame-by-frame prediction
+      changes a lot. Similar behaviour was almost entirely absent in R(2+1)D.
+
+    \item \textbf{Low-Resource Classes.} Both models struggle with classes that
+      were underrepresented in the training data. This is also true for unusual
+      routes and angles in the areas - the models struggle the more the testing
+      clips deviate from the training data. It is hypothesised that performance
+      generally improves with more versatile training data. In contrast, classes
+      that show distinctive features, such as the Atrium or First Floor
+      Mezzanine, are predicted more reliably.
+
+    \item \textbf{Training Data Bias.} A bias toward the training data is
+      present in both models. If features that are not representative of a
+      class, but are overrepresented in the training data of that class, there
+      is a chance for the model to learn these features as being indicative of a
+      class. This was the case for the libraries: Most video clips that were
+      taken while walking through bookshelves were filmed in library 2, while
+      the other libraries were filmed in a more open space. This led to model
+      associating in-between bookshelves clips to library 2, even though they
+      are also present in the other libraries.
+
+  \end{enumerate}
+
+  % subsection manual (end)
 
   \subsection{Deployment on Mobile Devices}
   \label{sub:deploment}
 
-  As a proof of concept, the best-performing model, was deployed on a mobile
-  device. The trained model was first quantised to 8-bit float precision and
-  then converted to \texttt{TorchScript} format. The \texttt{TorchScript} model
-  was then deployed on a mobile device using the \texttt{PlayTorch}
-  framework~\textit{[CITE]}. The \texttt{PlayTorch} framework is a port of the
-  PyTorch Mobile SDK that is natively compatible with native iOS and Android
-  Deployment to Javascript. This allows for rapid prototyping and deployment of
-  PyTorch models on mobile device using the popular React Native framework and
-  Expo. The model runs locally on the device and therefore does not require any
-  internet connection after initially downloading the model upon opening the
-  app.
-
-  \begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.5\textwidth]{./figures/playtorch-qr.png}
-    \caption{
-      \textbf{PlayTorch App.} Download the PlayTorch iOS or Android app and scan
-    the QR code to try out the model on your mobile device.}
-    \label{fig:playtorch-qr}
-  \end{figure}
+  \begin{minipage}{0.6\textwidth}
+    As a proof of concept, the best-performing model, was deployed on a mobile
+    device. The trained model was first quantised to 8-bit float precision and
+    then converted to \texttt{TorchScript} format. The \texttt{TorchScript} model
+    was then deployed on a mobile device using the \texttt{PlayTorch}
+    framework~\textit{[CITE]}. The \texttt{PlayTorch} framework is a port of the
+    PyTorch Mobile SDK that is natively compatible with native iOS and Android
+    Deployment to Javascript. This allows for rapid prototyping and deployment of
+    PyTorch models on mobile device using the popular React Native framework and
+    Expo. The model runs locally on the device and therefore does not require any
+    internet connection after initially downloading the model upon opening the
+    app.
+  \end{minipage}
+  \hfill%
+  \begin{minipage}{0.3\textwidth}
+    \includegraphics[width=\linewidth]{./figures/playtorch-qr.png}
+  \end{minipage}%
 
   % subsection deployment (end)
 
@@ -1088,7 +1238,7 @@
   % bibliography
   \newpage
   \bibliography{references}
-  \bibliographystyle{plain}
+  \bibliographystyle{abbrv}
 
 
   \newpage
@@ -1148,8 +1298,6 @@
   % subsection subsection name (end)
 
   % section remarks (end)
-
-  % conf matrices for all models
 
   \newpage
   \restoregeometry
