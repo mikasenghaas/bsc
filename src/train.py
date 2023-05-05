@@ -51,10 +51,11 @@ def train(
         args (argparse.Namespace): Arguments
     """
     # set progress bar with max epochs
+    model_name = config["general"]["name"]
+    model_type = config["general"]["type"]
     batch_size = config["loader"]["batch_size"]
     epochs = config["trainer"]["epochs"]
     device = config["trainer"]["device"]
-    model_type = config["general"]["type"]
     class2id = train_loader.dataset.class2id
 
     pbar = tqdm(range(epochs))
@@ -97,8 +98,14 @@ def train(
                 case _:
                     raise ValueError(f"Model type {model_type} not supported.")
 
-            # put data on device
-            inputs = inputs.to(device)
+            # put inputs on device
+            match model_name:
+                case "SlowFast R50":
+                    inputs = [i.to(device) for i in inputs]
+                case _:
+                    inputs = inputs.to(device)
+
+            # put labels on device
             labels = labels.to(device)
 
             # zero the parameter gradients

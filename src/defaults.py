@@ -265,6 +265,40 @@ DEFAULT = {
         },
         "trainer": {"epochs": 10, "device": "mps"},
     },
+    "i3d_r50": {
+        "general": {
+            "name": "I3D R50",
+            "desc": "I3D R50 for video classification",
+            "type": "video",
+            "link": "https://github.com/piergiaj/pytorch-i3d",
+        },
+        "model": {
+            "hub_link": "facebookresearch/pytorchvideo",
+            "hub_identifier": "i3d_r50",
+            "pretrained": True,
+            "num_classes": 20,
+        },
+        "transform": {
+            "mean": [0.45, 0.45, 0.45],
+            "std": [0.225, 0.225, 0.225],
+            "side_size": 224,
+            "crop_size": 224,
+            "num_frames": 8,
+            "sampling_rate": 8,
+            "packway": False,
+        },
+        "dataset": {
+            "clip_duration": 8 * 8 / 30,
+        },
+        "loader": {
+            "batch_size": 4,
+        },
+        "optim": {
+            "lr": 0.0001,
+            "weight_decay": 1e-4,
+        },
+        "trainer": {"epochs": 10, "device": "cpu"},
+    },
     "x3d_s": {
         "general": {
             "name": "X3D",
@@ -285,6 +319,7 @@ DEFAULT = {
             "crop_size": 182,
             "num_frames": 13,
             "sampling_rate": 6,
+            "packway": False,
         },
         "dataset": {
             "clip_duration": 13 * 6 / 30,
@@ -318,6 +353,7 @@ DEFAULT = {
             "crop_size": 182,
             "num_frames": 13,
             "sampling_rate": 6,
+            "packway": False,
         },
         "dataset": {
             "clip_duration": 13 * 6 / 30,
@@ -333,7 +369,7 @@ DEFAULT = {
     },
     "slow_r50": {
         "general": {
-            "name": "SlowFast R50",
+            "name": "Slow R50",
             "desc": "Slow R50 for video classification",
             "type": "video",
             "link": "https://pytorch.org/hub/facebookresearch_pytorchvideo_resnet/",
@@ -347,10 +383,11 @@ DEFAULT = {
         "transform": {
             "mean": [0.45, 0.45, 0.45],
             "std": [0.225, 0.225, 0.225],
-            "side_size": 182,
-            "crop_size": 256,
+            "side_size": 224,
+            "crop_size": 224,
             "num_frames": 8,
             "sampling_rate": 8,
+            "packway": False,
         },
         "dataset": {
             "clip_duration": 8 * 8 / 30,
@@ -381,13 +418,14 @@ DEFAULT = {
         "transform": {
             "mean": [0.45, 0.45, 0.45],
             "std": [0.225, 0.225, 0.225],
-            "side_size": 182,
-            "crop_size": 182,
-            "num_frames": 8,
-            "sampling_rate": 8,
+            "side_size": 224,
+            "crop_size": 224,
+            "num_frames": 32,
+            "sampling_rate": 2,
+            "packway": True,
         },
         "dataset": {
-            "clip_duration": 8 * 8 / 30,
+            "clip_duration": 2 * 32 / 30,
         },
         "loader": {
             "batch_size": 4,
