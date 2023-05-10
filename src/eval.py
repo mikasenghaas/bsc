@@ -6,6 +6,7 @@ import warnings
 
 import torch
 from tqdm import tqdm
+import pandas as pd
 from torch.nn.functional import softmax
 from torch.utils.data import DataLoader
 import torcheval.metrics.functional as metrics
@@ -30,8 +31,8 @@ def main():
 
     Loads a model as specified by its name and version number. The artifact and
     run that produced the model are downloaded from WANDB into the local
-    `artifacts` directory and then loaded into memory. The model is evaluated on 
-    the test split of the dataset and the results are uploaded to WANDB. 
+    `artifacts` directory and then loaded into memory. The model is evaluated on
+    the test split of the dataset and the results are uploaded to WANDB.
 
     The model is evaluated using the following metrics:
     - Top1-Accuracy
@@ -89,7 +90,7 @@ def main():
 
     # initialise wandb run
     start_task(f"Recognised WANB Run ID: {run_id}")
-    run = api.run(f"mikasenghaas/bsc-2/{run_id}")
+    run = api.run(f"mikasenghaas/{WANDB_PROJECT}/{run_id}")
 
     # set eval mode
     model.eval()
@@ -106,7 +107,7 @@ def main():
         case "video":
             bm = benchmark(model, sample["video"].to("cpu"), num_runs=5)
 
-    benchmark_metrics = {"benchmark": bm}
+    benchmark_metrics = pd.json_normalize(bm, sep='_').to_dict(orient='records')[0]
 
     start_task("Predicting on test split")
     model.to(device)
@@ -149,6 +150,7 @@ def main():
             y_probs = y_probs + probs.tolist()
             y_pred = y_pred + preds.tolist()
             y_true = y_true + labels.tolist()
+            break
 
     start_task("Computing performance metrics")
     # convert to torch tensors
