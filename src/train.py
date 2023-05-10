@@ -220,8 +220,14 @@ def train(
                 case _:
                     raise ValueError(f"Model type {model_type} not supported.")
 
-            # put data on device
-            inputs = inputs.to(device)
+            # put inputs on device
+            match model_name:
+                case "SlowFast R50":
+                    inputs = [i.to(device) for i in inputs]
+                case _:
+                    inputs = inputs.to(device)
+
+            # put labels on device
             labels = labels.to(device)
 
             # forward pass
