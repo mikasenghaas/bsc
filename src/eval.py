@@ -150,7 +150,6 @@ def main():
             y_probs = y_probs + probs.tolist()
             y_pred = y_pred + preds.tolist()
             y_true = y_true + labels.tolist()
-            break
 
     start_task("Computing performance metrics")
     # convert to torch tensors
