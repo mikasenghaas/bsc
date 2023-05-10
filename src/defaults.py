@@ -10,7 +10,7 @@ DEFAULT = {
         "model": {
             "hub_link": "pytorch/vision",
             "hub_identifier": "alexnet",
-            "pretrained": False,
+            "pretrained": True,
             "num_classes": 20,
         },
         "transform": {
@@ -39,7 +39,7 @@ DEFAULT = {
         "model": {
             "hub_link": "pytorch/vision",
             "hub_identifier": "googlenet",
-            "pretrained": False,
+            "pretrained": True,
             "num_classes": 20,
         },
         "transform": {
@@ -69,7 +69,7 @@ DEFAULT = {
         "model": {
             "hub_link": "pytorch/vision",
             "hub_identifier": "convnext_tiny",
-            "pretrained": False,
+            "pretrained": True,
             "num_classes": 20,
         },
         "transform": {
@@ -99,7 +99,7 @@ DEFAULT = {
         "model": {
             "hub_link": "pytorch/vision",
             "hub_identifier": "densenet121",
-            "pretrained": False,
+            "pretrained": True,
             "num_classes": 20,
         },
         "transform": {
@@ -128,7 +128,7 @@ DEFAULT = {
         "model": {
             "hub_link": "pytorch/vision",
             "hub_identifier": "efficientnet_v2_s",
-            "pretrained": False,
+            "pretrained": True,
             "num_classes": 20,
         },
         "transform": {
@@ -157,7 +157,7 @@ DEFAULT = {
         "model": {
             "hub_link": "pytorch/vision",
             "hub_identifier": "mobilenet_v3_small",
-            "pretrained": False,
+            "pretrained": True,
             "num_classes": 20,
         },
         "transform": {
@@ -187,7 +187,7 @@ DEFAULT = {
         "model": {
             "hub_link": "pytorch/vision",
             "hub_identifier": "resnet18",
-            "pretrained": False,
+            "pretrained": True,
             "num_classes": 20,
         },
         "transform": {
@@ -216,7 +216,7 @@ DEFAULT = {
         "model": {
             "hub_link": "pytorch/vision",
             "hub_identifier": "resnet50",
-            "pretrained": False,
+            "pretrained": True,
             "num_classes": 20,
         },
         "transform": {
@@ -246,7 +246,7 @@ DEFAULT = {
         "model": {
             "hub_link": "pytorch/vision",
             "hub_identifier": "vit_b_16",
-            "pretrained": False,
+            "pretrained": True,
             "num_classes": 20,
         },
         "transform": {
