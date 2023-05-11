@@ -101,13 +101,16 @@ def main():
     # benchmark model inference on CPU
     start_task("Benchmarking model")
     sample = next(iter(test_loader))
+    benchmark_metrics = {}
     match model_type:
         case "image":
             bm = benchmark(model, sample[0].to("cpu"), num_runs=5)
         case "video":
-            bm = benchmark(model, sample["video"].to("cpu"), num_runs=5)
-
-    benchmark_metrics = pd.json_normalize(bm, sep='_').to_dict(orient='records')[0]
+            if args.model != "slowfast_r50":
+                bm = benchmark(model, sample["video"].to("cpu"), num_runs=5)
+                benchmark_metrics = pd.json_normalize(bm, sep="_").to_dict(
+                    orient="records"
+                )[0]
 
     start_task("Predicting on test split")
     model.to(device)
@@ -125,8 +128,14 @@ def main():
                 case _:
                     raise ValueError(f"Model type {model_type} not supported.")
 
-            # move data to device
-            inputs = inputs.to(device)
+            # move inputs to device
+            match args.model:
+                case "slowfast_r50":
+                    inputs = [i.to(device) for i in inputs]
+                case _:
+                    inputs = inputs.to(device)
+
+            # move labels to device
             labels = labels.to(device)
 
             # forward pass
