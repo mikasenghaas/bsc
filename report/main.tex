@@ -61,10 +61,10 @@
 
 \begin{abstract} % (fold)
 
-In our increasingly urbanised world, indoor localisation is becoming a necessity
-for a wide variety of applications, ranging from personal navigation to
-augmented reality. However, despite extensive research efforts, indoor
-localisation remains a challenging task and no single solution is widely
+In an increasingly urbanised and digitalised world, indoor localisation is
+becoming a necessity for a wide variety of applications, ranging from personal
+navigation to augmented reality. However, despite extensive research efforts,
+indoor localisation remains a challenging task and no single solution is widely
 adopted. Motivated by the success of deep learning in numerous computer vision
 tasks, this study explores the feasibility of deep learning for accurate
 room-level localisation in indoor spaces. Various neural network architectures
@@ -281,10 +281,10 @@ multiple feature-maps. After applying a non-linear activation to each feature
 map, they are stacked along the channel dimension to form the output of the
 convolutional layer, which is passed to the next layer. Pooling layers are often
 interleaved with convolutional layers to reduce the dimensionality of feature
-maps. The pooling operation is similar to convolution, as a kernel is slid
-However, instead of computing a weighted sum, the pooling operation computes a
-statistic, such as the maximum (Max Pooling) or average (Average Pooling), of
-the values in the kernel.
+maps. The pooling operation is similar to convolution, as a kernel is slid over
+the spatial dimensions of the input. However, instead of computing a weighted
+sum, the pooling operation computes a statistic, such as the maximum (Max
+Pooling) or average (Average Pooling), of the values in the kernel.
 
 % why cnns work
 CNNs have been found to work specifically well for data with a spatial structure
@@ -311,7 +311,7 @@ rank amongst the top performing methods in image classification benchmarks.
   \centering
   \begin{subfigure}[b]{0.49\textwidth}
     \includegraphics[width=\textwidth]{./figures/2d-conv.png}
-    \caption{2d Convolution}
+    \caption{2D Convolution}
   \end{subfigure}
   \hfill
   \begin{subfigure}[b]{0.49\textwidth}
@@ -365,39 +365,24 @@ leverage 3D convolutions~\cite{c3d, i3d}. 3D convolutions are a natural
 extension of 2D convolutions, as defined in
 Section~\ref{sub:image-classification}. Instead of sliding a convolutional
 filter across the spatial dimension of the input (Figure~\ref{fig:conv}a), a
-3d-convolutional filter slides across the spatio-temporal dimension of the input
+3D-convolutional filter slides across the spatio-temporal dimension of the input
 (Figure~\ref{fig:conv}b), which produces feature maps in spatio-temporal space
 that are learned jointly. 3D convolutions have been used in many different
 variants. Architectures range from pure 3D convolution networks~\cite{i3d, c3d}
 to hybrid architectures that combine 2D and 3D convolutions~\cite{x3d,
-slowfast}. Overall, the literature on video classification is vast and complex.
-Despite the introduction of large-scale datasets for video
-classification~\cite{kinetics}, the research field has not yet converged to a
-consensus about the best approach for video classification.
+slowfast}. Overall, it can be summarised that, despite the introduction of
+large-scale datasets for video classification~\cite{kinetics}, the research
+field has not yet converged to a consensus about the best approach for video
+classification.
 
-\section{Methodology} % (fold)
-\label{sec:methodology}
+\section{Data}
 
-In this light, this study aims to understand how different CNN-based
-architectures perform when faced with the task of assigning location labels to a
-continuous stream of frames, a video, in an indoor space. 
-
-To this end, the study considers a wide-variety of different models that are
-detailed in Section~\ref{sub:models}. One major distinction between the
-different models, is whether or not they operate on a single-frame or a sequence
-of frames. Because this distinction impacts all steps of the study, from data
-processing to model evaluation, the following two different problem settings are
-distinguished throughout the entire study:
-
-\begin{enumerate}
-
-\item \textbf{Single-frame classification}: Given a continuous stream of frames,
-  the task is to classify each frame individually.
-
-\item \textbf{Video classification}: Given a continuous stream of frames, the
-  task is to classify fixed-sized clips of the video.
-
-\end{enumerate}
+To train a deep learning model for indoor localisation, a labelled data set is
+required for training and evaluation. The following section describes the
+collection, annotation and pre-processing of the data. Because this study
+investigates models that are trained on static frames and sequences of
+frames, the pre-processing of the data differs, so that the data is compatible
+with the models.
 
 \subsection{Raw Data} % (fold)
 \label{sub:raw-data}
@@ -519,7 +504,7 @@ $n_f=\sim 12K$ for the training split and $n_f=20K$ for the testing split.
 
 \subsubsection{Video Dataset} % (fold)
 
-A video classification models expects a single clip $c_i$ as input, which is a
+A video classification model expects a single clip $c_i$ as input, which is a
 fixed-sized sequence of $s_v$ frames sampled from a video $v_i$ at a sampling
 rate $r_v$. For this reason, the video classification dataset is constructed by
 extracting clips from the videos in the raw data split. Clips are extracted in
@@ -578,12 +563,41 @@ process yielded a set of clip-location samples $D_V = \{(c_1, l_1), ...,
 
 % subsection data-preprocessing (end)
 
+\section{Methodology} % (fold)
+\label{sec:methodology}
+
+To assess the capabilities of different deep learning models, the study follows
+a standardised methodology. First, a self-gathered dataset is collected,
+annotated and preprocessed according to the specification of the problem
+setting. Next, a series of deep learning models are selected and trained under
+constant conditions on the same dataset and evaluated using a collection of
+commonly used metrics for performance and efficiency. Finally, the results are
+analysed in order to discuss the applicability of deep learning models for
+indoor localisation.
+
+One major distinction between the different models is whether or not they
+operate on a single-frame or a sequence of frames. Because this distinction
+impacts all steps of the study, from data processing to model evaluation, the
+following two different problem settings are distinguished throughout the entire
+study:
+
+\begin{enumerate}
+
+\item \textbf{Single-frame classification}: Given a continuous stream of frames,
+  the task is to classify each frame individually.
+
+\item \textbf{Video classification}: Given a continuous stream of frames, the
+  task is to classify fixed-sized clips of the video.
+
+\end{enumerate}
+
+
 \subsection{Models} % (fold)
 \label{sub:models}
 
 
-Following the literature on single-frame and video classification tasks, a
-twelve different models were trained and evaluated in this work. Following the
+Following the literature on single-frame and video classification tasks, twelve
+different models were trained and evaluated in this work. Following the
 distinction made in Section~\ref{sec:methodology}, the models are grouped into
 single-frame and video classification models. 
 
@@ -648,12 +662,13 @@ model.
 \subsubsection{Single-Frame Classifiers} % (fold)
 
 \textbf{Alexnet}~\cite{alexnet} is a convolutional neural network that was
-introduced by Krizhevsky \textit{et al.} in 2012. It was the first deep neural network to
-win the ImageNet Large Scale Visual Recognition Challenge~\cite{imagenet} and is
-considered to be one of the first successful application of deep learning to
-image classification. Architecturally, it consists of five convolutional layers
-with occasional max-pooling layers in between, followed by three fully connected
-layers, as illustrated in Figure~\ref{fig:alexnet}.
+introduced by Krizhevsky \textit{et al.} in 2012. It was the first deep neural
+network to win the ImageNet Large Scale Visual Recognition
+Challenge~\cite{imagenet} and is considered to be one of the first successful
+applications of deep learning to image classification. Architecturally, it
+consists of five convolutional layers with occasional max-pooling layers in
+between, followed by three fully connected layers, as illustrated in
+Figure~\ref{fig:alexnet}.
 
 \begin{figure}
   \centering
@@ -769,13 +784,13 @@ first Transformer-based model adapted for the computer vision tasks. The main
 contribution of the model is the patch embedding mechanism, which overcomes the
 architectural mismatch between the two-dimensional input of images and the
 one-dimensional input of Transformer architectures. Dosovitskiy \textit{et al.}
-propose to split a 2d image into a sequence of fixed-sized patches, which are
-then flattened and embedded into a sequence of "tokens". Together with
-positional encodings for the position of the patch in the original image, this
-sequence of tokens can be fed into a regular Transformer architecture. The
-authors introduce several configuration of the architecture. In this work, the
-base Vision Transformer, ViT-B-16, which is among the smaller variants of the
-model is used.
+propose to split a two-dimensional image into a sequence of fixed-sized
+patches, which are then flattened and embedded into a sequence of "tokens".
+Together with positional encodings for the position of the patch in the original
+image, this sequence of tokens can be fed into a regular Transformer
+architecture. The authors introduce several configurations of the architecture.
+In this work, the base Vision Transformer, ViT-B-16, which is among the smaller
+variants of the model is used.
 
 Since then, many variants of the Vision Transformer have been proposed. They
 either decrease the computational complexity of the architecture~\cite{deit,
@@ -802,8 +817,8 @@ perform surprisingly well, and that the temporal dimension only provides
 marginal gains. This finding and the fact that one would expect the temporal
 information and motion patterns that emerge in sequences of images to be
 important for video motivated Tran et. al to investigate different architectural
-designs for video classification tasks. They contrast regular 2d convolution,
-mixed 2d and 3d convolution, 3d convolution and 3d convolution with factorised
+designs for video classification tasks. They contrast regular 3D convolution,
+mixed 2D and 3D convolution, 3D convolution and 3D convolution with factorised
 filters, which they coin \textbf{R(2+1)D}~\cite{r2plus1d}. They find that the
 R(2+1)D architecture improves the performance on the Kinetics dataset by a
 noticeable margin. 
@@ -836,7 +851,7 @@ is used.
 \label{sub:training}
 
 All models were implemented using the deep learning framework
-\texttt{PyTorch}~\cite{pytorch}. The model architectures were taken from the
+\texttt{PyTorch}. The model architectures were taken from the
 \texttt{torchvision} and \texttt{pytorchvideo} libraries for single-frame and
 video classification models, respectively and initialised with the default
 pre-trained weights provided by the libraries. For all single-frame pre-training
@@ -997,18 +1012,17 @@ evaluation of the performance and efficiency of the different models are
 presented in Table~\ref{tab:results} and discussed in the following.
 
 \begin{table}
-  \caption{ 
-    \textbf{Results.} The table the performance and efficiency metrics for all
-    trained models. The models are grouped by their type (single-frame or
-    video). The performance metrics are the top-1 accuracy (Acc@1), top-3
-    accuracy (Acc@3) and Macro F1-Score (Ma.-F1). The efficiency metrics are the
-    number of floating point operations (FLOPs) per inference, the mean
-    inference time in milliseconds per prediction (Latency) and the mean number
-    of predictions per second (Throughput). The best performing model in each
-    category is highlighted in bold. The metrics are computed on the test set of
-    the respective dataset. \textit{SlowFast R50 could not be benchmarked
-      because of limitations of the \texttt{PyTorch Benchmark} library.}
-  }
+  \caption{ \textbf{Results.} The table shows the performance and efficiency
+    metrics for all trained models. The models are grouped by their type
+    (single-frame or video). The performance metrics are the top-1 accuracy
+    (Acc@1), top-3 accuracy (Acc@3) and Macro F1-Score (Ma.-F1). The efficiency
+    metrics are the number of floating point operations (FLOPs) per inference,
+    the mean inference time in milliseconds per prediction (Latency) and the
+    mean number of predictions per second (Throughput). The best performing
+    model in each category is highlighted in bold. The metrics are computed on
+    the test set of the respective dataset. \textit{SlowFast R50 could not be
+  benchmarked because of limitations of the \texttt{PyTorch Benchmark} library.}
+}
 
   \begin{tabular}{cllll|llll}
   \toprule
@@ -1053,21 +1067,20 @@ sufficient to accurately determine location in indoor spaces.
 % top-1 and top-3 acc
 The choice of the model architecture seems to affect the overall performance,
 but only to a small degree. The Top-1 accuracy of all single-frame classifiers
-ranges within 75\% and 84\% - only a 9\% difference between the worst-performing
-model (AlexNet) and the best-performing model (ConvNext Tiny). Similarly, the
-Top-3 accuracy ranges within 89\% and 95\%, which is only a 6\% difference.
-Generally, the results follow the performance that is to be expected given the
-ImageNet benchmarking results (Table~\ref{tab:model-overview}). ResNet50
-outperforms ResNet18, which outperforms AlexNet. The most modern model
-considered in this study, ConvNext Tiny, performs best overall. The only
-exception is ViT B-16, which performs worse than expected given its dominance in
-most computer vision benchmarks in recent years. It is likely that given its
-significantly larger size, it struggles with undertraining. Overall, the results
-show that the more complex models generally improve the Top-1 and Top-3
-Accuracy, but only marginally so. For all models, the Macro F1-Score was
-observed to be lower, but only marginally so. This suggests that the models
-generally do not seem to be affected negatively by the class imbalance of the
-dataset.
+ranges within 75\% and 84\% - only difference of 9 percentage points between the
+worst-performing model (AlexNet) and the best-performing model (ConvNext Tiny).
+Similarly, the Top-3 accuracy ranges within 89\% and 95\%. Generally, the
+results follow the performance that is to be expected given the ImageNet
+benchmarking results (Table~\ref{tab:model-overview}). ResNet50 outperforms
+ResNet18, which outperforms AlexNet. The most modern model considered in this
+study, ConvNext Tiny, performs best overall. The only exception is ViT B-16,
+which performs worse than expected given its dominance in most computer vision
+benchmarks in recent years. It is likely that given its significantly larger
+size, it struggles with undertraining. Overall, the results show that the more
+complex models generally improve the Top-1 and Top-3 Accuracy, but only
+marginally so. For all models, the Macro F1-Score was observed to be lower, but
+only marginally so. This suggests that the models generally do not seem to be
+affected negatively by the class imbalance of the dataset.
 
 % video classifiers
 It is generally assumed that knowledge about the temporal context of the video
@@ -1124,14 +1137,15 @@ a trade-off between model complexity and efficiency, especially when efficiency
 is critical like when deployed on a mobile device.
 
 The efficiency of the single-frame and video classifiers generally varies more
-than the performance - both within the groups and between the groups. The
-single-frame classifiers range from from a throughput rate of 7.99 predictions
-per second (ViT-B-16) to 109.07 predictions per second (MobileNet V3 S). This
-means that the most efficient model is 13.65 times more efficient than the least
-efficient model. The video classifiers require more compute and memory resources
-during inference, and are there therefore less efficient. They are only able to
-provide predictions between 1.26 predictions per second (Slow R50 Family) and
-3.01 predictions per second (R(2+1)D). However, as each prediction considers a
+than the performance - both within and between the groups of singe-frame and
+video classifiers. The single-frame classifiers range from a throughput
+rate of 7.99 predictions per second (ViT-B-16) to 109.07 predictions per second
+(MobileNet V3 S). Three models (MobileNet V3 S, AlexNet, ResNet 18) are capable
+of providing predictions in real-time (at least 30 predictions per second). The
+video classifiers require more compute and memory resources during inference,
+and are there therefore less efficient. They are only able to provide
+predictions between 1.26 predictions per second (Slow R50 Family) and 3.01
+predictions per second (R(2+1)D). However, as each prediction considers a
 history of frames, the predictions are more robust and valid for a longer time.
 
 % tradeoff
@@ -1206,7 +1220,7 @@ architectures, they exhibit similar confusion patterns.
 % confuses visually similar classes
 Both models show a tendency for confusing visually similar classes. 
 The first example of this are the two corridors on the ground floor (Ground Floor
-Corridor 1 and Ground Floor Corridor 2 and the Atrium (K). The architecture,
+Corridor 1 and Ground Floor Corridor 2) and the Atrium. The architecture,
 interior design and lighting of the corridors are very similar, making it more
 challenging for both models to distinguish between the two.
 Figure~\ref{fig:conf-matrix-challenging}a shows the confusion between these
@@ -1258,7 +1272,7 @@ the majority class in cases of uncertainty.
 
 To further analyse and confirm the above findings, exemplary mispredictions are
 analysed for both models. Beyond the common misprediction patterns that were
-visible from the confusion matrices, this analyses found two more common failure
+visible from the confusion matrices, this analysis found two more common failure
 cases.
 
 Figure~\ref{fig:mispredictions} displays six exemplary mispredictions for
@@ -1369,7 +1383,7 @@ more efficiently on mobile devices. Deployment was done using the
 \texttt{PlayTorch} framework, which is a port of the \texttt{PyTorch} Mobile SDK
 for native iOS and Android to Javascript. The deployed model can be tested by
 downloading the PlayTorch app from the App Store or Google Play Store and
-scanning the QR code found in the \href{https://github.com/mikasenghaas}{README}
+scanning the QR code found in the \href{https://github.com/mikasenghaas/bsc}{README}
 of this project's GitHub repository. This will open the application, download
 the model and run it locally on the device.
 
@@ -1381,8 +1395,8 @@ the model and run it locally on the device.
 \subsection{Limitations \& Future Work} % (fold)
 \label{sub:limitations}
 
-This study has shown the potential of using common deep learning methods for
-providing accurate room-level localisation. 
+% This study has shown the potential of using common deep learning methods for
+% providing accurate room-level localisation. 
 
 % small data set
 Arguably, the biggest limitation of this study is the small data set that was
@@ -1394,7 +1408,7 @@ is available.
 
 % train data
 Specifically, it would be interesting to investigate if a training dataset that
-captures the full variation of visual inputs from a indoor location over a
+captures the full variation of visual inputs from an indoor location over a
 longer period of time would lead to higher localisation accuracy, and most
 importantly, can help to overcome the misprediction patterns observed in this
 study. Interesting follow-up questions, that also speak to the practicality of
@@ -1403,52 +1417,55 @@ training dataset, that can train models that do not suffer from the
 misprediction patterns observed in this study.
 
 % over-optimistic
-Another consequence of the small data size is that the test split might not
-be representative of the true variation of visual inputs from a indoor location
-over the course of a year in the current setup. In that is the case, then the
+Another consequence of the small data size is that the test split might not be
+representative of the true variation of visual inputs from a indoor location
+over the course of a year in the current setup. If that is the case, the
 evaluation metrics reported in this study are likely to be over-optimistic.
 
 % edge-cases
 Finally, the detailed analysis of the mispredicted samples has shown that most
-errors, because the models that are visually similar, e.g. the libraries. As the
-vast majority of the mispredictions are due to this reason, future work should
-focus on improving the models' ability to distinguish between visually similar
-rooms. As said, this could be achieved by collecting more data from these rooms.
-Other starting points might be to directly incorporate about the relative
-position of the rooms in the building, which could limit the number of possible
-predictions. For example, if a model is confident in the prediction of the
-current room, it could use this information to limit the number of possible
-predictions for the next frame, if it has information about the current adjacent
-rooms.
+errors occur, because the models fail to distinguish locations that are visually
+similar, e.g. the libraries. As the vast majority of the mispredictions can be
+attributed to this phenomenon, future work should focus on improving the models'
+ability to distinguish between visually similar rooms. As said, this could be
+achieved by collecting more data from these rooms. Other starting points might
+be to directly incorporate about the relative position of the rooms in the
+building, which could limit the number of possible predictions. For example, if
+a model is confident in the prediction of the current room, it could use this
+information to limit the number of possible predictions for the next frame, if
+it has information about the current adjacent rooms.
 
-\subsection{Conclusion} % (fold)
-\label{sub:conclusion}
+\subsection{Summary} % (fold)
+\label{sub:summary}
 
 % indoor localisation is solvable with a pure deep learning pipeline
 This study has demonstrated that it is possible to use a pure deep learning
-pipeline for providing accurate room-level localisation in indoor spaces.
+pipeline for providing reasonably accurate location estimates in indoor spaces.
 
 % performance
-Both single-frame classifiers, that do not model temporal information, and video
-classifiers, that do model temporal information, were found to be capable of
-learning discriminative features from the visual input that allow them to
-localise a human agent in an indoor space from a set of rooms with a test
-accuracy of up to 83.59\%.
+Both single-frame classifiers, that only use static frames as input, and video
+classifiers, that directly model the temporal information, were found to be
+capable of learning discriminative features from the visual input that allow
+them to localise a human agent in an indoor space from a set of rooms with a
+test accuracy of up to 83.59\%.
 
 % failure modes
-A detailed analysis of the mispredictions patterns and intricate behaviors of
-the models unveiled three common failure modes: All models struggle with
-visually similar classes, transition between classes and when major visual
-changes, such as renovations, occur in the environment. All of these issues are
-grounded in the nature of the data set and the difficulty of the problem itself,
-but might be mitigated by collecting more data or by incorporating additional
-information in the models.
+A detailed analysis of the misprediction patterns and intricate behaviours of
+the models unveiled three common failure modes: The models were found to
+struggle with visually similar locations, transition between locations  and when
+major visual changes, such as renovations, occur in the environment. 
+
+% promising results and outlook
+Overall, the results are promising and suggest that with a larger-scale and
+carefully designed data set, it is possible to train models that can provide
+even more accurate location estimates in indoor spaces. This could make the
+proposed method a viable alternative to existing indoor localisation systems,
+for example, in indoor navigation or augmented reality applications.
 
 % bibliography
 \newpage
 \bibliography{references}
 \bibliographystyle{abbrv}
-
 
 \newpage
 \section{Appendix} % (fold)
@@ -1477,39 +1494,7 @@ The HPC cluster was used for training and evaluation of all models. Analyses
 and visualisations were performed on the local machine, as well as running the
 real-time inference demo. 
 
-\begin{table}
-  \centering
-  \begin{subtable}{0.9\linewidth}
-  \centering
-  \begin{tabular}{cll}
-
-  \toprule
-  & Specification & Value \\
-  \midrule
-
-  \multirow{2}{*}{\rotatebox[origin=c]{90}{Sys.}} & Name & Darwin \\
-  \vspace{0.1cm}
-  & Node & MacBook Pro \\
-
-  \multirow{4}{*}{\rotatebox[origin=c]{90}{CPU}} & Model & Apple M1 \\
-  & Architecture & ARM64 \\
-  & Physical Cores & 8 \\
-  \vspace{0.1cm}
-  & Frequency & 2.4 GHz \\
-
-  \multirow{2}{*}{\rotatebox[origin=c]{90}{Mem.}} & Total Capacity & 16
-  GB\\
-  & Avg. Used Capacity & $\sim 7.4$ GB \\
-
-  \bottomrule
-  \end{tabular}
-
-  \caption{Local Machine}
-  \end{subtable}
-
-  \bigskip
-
-  \begin{subtable}{0.9\linewidth}
+\begin{table}[ht]
   \centering
   \begin{tabular}{cll}
 
@@ -1541,50 +1526,13 @@ real-time inference demo.
 
   \bottomrule
   \end{tabular}
-\caption{HPC (Remote Server)}
-\end{subtable} 
-
 \caption{\textbf{Machine Specifications.} The Table shows relevant hardware
-  specifications for (a) the local machine and (b) the remote server that were
-  used for conducting experiments within this study.}
+specifications for the remote server that was used for conducting experiments
+within this study.}
 
 \label{tab:machine-specs}
 \end{table}
 
 % section remarks (end)
-
-\begin{table}[ht]
-  \caption{Encoding of Classes}
-  \centering
-  \begin{tabular}{lc}
-  \toprule
-  \bfseries Class & \bfseries Encoding \\
-  \midrule
-  First\_Floor\_Corridor\_1 & A \\
-  First\_Floor\_Corridor\_2 & B \\
-  First\_Floor\_Green\_Area & C \\
-  First\_Floor\_Library\_1 & D \\
-  First\_Floor\_Library\_2 & E \\
-  First\_Floor\_Library\_3 & F \\
-  First\_Floor\_Magenta\_Area & G \\
-  First\_Floor\_Mezzanine & H \\
-  First\_Floor\_Red\_Area & I \\
-  First\_Floor\_Yellow\_Area & J \\
-  Ground\_Floor\_Atrium & K \\
-  Ground\_Floor\_Corridor\_1 & L \\
-  Ground\_Floor\_Corridor\_2 & M \\
-  Ground\_Floor\_Entrance\_Magenta & N \\
-  Ground\_Floor\_Entrance\_Yellow & O \\
-  Ground\_Floor\_Green\_Area & P \\
-  Ground\_Floor\_Magenta\_Area & Q \\
-  Ground\_Floor\_Red\_Area & R \\
-  Ground\_Floor\_Yellow\_Area & S \\
-  Stairs\_Atrium & T \\
-  \bottomrule
-  \end{tabular}
-  \label{tab:class-encoding}
-\end{table}
-
-% section appendix (end)
 
 \end{document}
