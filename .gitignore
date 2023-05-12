@@ -5,7 +5,6 @@ models
 artifacts
 wandb
 data/**/*
-data/**/*
 !data/*.zip
 
 # Ignore Tex Build, except compiled PDF
