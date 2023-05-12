@@ -11,7 +11,7 @@ from torch.nn.functional import softmax
 from torchvision import transforms
 
 import wandb
-from config import BASEPATH, RAW_DATA_PATH
+from config import BASEPATH, RAW_DATA_PATH, WANDB_PROJECT
 from utils import load_infer_args, start_task, end_task
 
 from modules import MODULES
@@ -32,7 +32,7 @@ def main():
     start_task(f"Loading {args.model}:{args.version}")
     api = wandb.Api()
     artifact = api.artifact(
-        f"mikasenghaas/bsc-2/{args.model}:{args.version}", type="model"
+        f"mikasenghaas/{WANDB_PROJECT}/{args.model}:{args.version}", type="model"
     )  # pyright: ignore
     filepath = os.path.join(BASEPATH, "artifacts", f"{args.model}:{args.version}")
     if not os.path.exists(filepath):
