@@ -166,29 +166,28 @@ series of techniques and algorithms that allow computers to learn from data
 without being explicitly programmed. One example of a machine learning task is
 classification, which aims to assign a discrete label $\hat{y} \in \{y_1,
 \ldots, y_n\}$ to an input $x$. The mapping from the input $x$ to the label
-$\hat{y}$ is called a classifier, and often denoted as $\hat{f}(x) = \hat{y}$.
+$\hat{y}$ is called a classifier and is often denoted as $f(x) = \hat{y}$.
 Typically such a classifier is trained on a large set of labelled data, called
 the training set, which consists of true instances $x_i$ and their labels $y_i$.
 Using numeric optimisation algorithms, like gradient-descent, the classifier
-iteratively improves its approximation $\hat{f}$ of the true mapping $f(x) = y$
-by minimising a loss function $\mathcal{L}(\hat{f}(x), y)$ that quantifies the
-error of the machine learning model.
+iteratively updates its parameters to minimise a loss function
+$\mathcal{L}(\hat{f}(x), y)$ that quantifies the error of the machine learning
+model.
 
-Deep learning is a subfield of machine learning, and describes a specific class
-of machine learning algorithms that are based on the theory of artificial neural
-networks (ANNs). ANNs are inspired by and loosely related to the structure and
+Deep learning is a subfield of machine learning and describes a specific class
+of machine learning algorithms based on the theory of artificial neural networks
+(ANNs). ANNs are inspired by and loosely related to the structure and
 functioning of the neurons in the human brain. They are structured in a series
-of fully-connected layers, where each layer consists of nodes.
-Figure~\ref{fig:ann} shows an ANN with an input layer with three nodes, three
-hidden layers with seven nodes each and an output layer with three nodes.
-Information flows from the input layer through the hidden layers to the output
-layer. The information flow happens through sequential linear transformations of
-the input data, which are performed by the nodes in the network. Specifically,
-each node's output is a linear transformation of the outputs of all nodes in the
-previous layer, 
+of fully-connected layers, each consisting of nodes. Figure~\ref{fig:ann} shows
+an ANN with an input layer with three nodes, three hidden layers with seven
+nodes each and an output layer with three nodes. Information flows from the
+input layer through the hidden layers to the output layer. The information flow
+happens through sequential linear transformations of the input data performed by
+the network nodes. Specifically, each node's output is a linear transformation
+of the outputs of all nodes in the previous layer. Hence, it can be written as
 
 \begin{equation}
-  z_{i} = \sum_{j=1}^{n} w_{ij} x_j + b_i
+  z_{i} = \sum_{j=1}^{n} w_{ij} x_j + b_i \quad ,
   \label{eq:perceptron}
 \end{equation}
 
@@ -217,9 +216,9 @@ complex data relationships in a wide variety of domains.
   \end{center}
 
   \caption{\textbf{Artificial Neural Network.} A schematic of the fundamental
-    building blocks of an artificial neural network (ANN). The right figure
+    building blocks of an artificial neural network (ANN). The right Figure
     shows the macro structure of an exemplary ANN with an input layer, three
-    hidden layers, and an output layer. The left figure shows the micro
+    hidden layers, and an output layer. The left Figure shows the micro
     structure of a single node in the network. The node performs a linear
     transformation of the inputs $x_i$ and the weights $w_i$ and adds a bias
     $b_i$. The output of the node is the result of a non-linear activation
@@ -227,18 +226,19 @@ complex data relationships in a wide variety of domains.
   \label{fig:ann}
 \end{figure}
 
-\subsection{Image Classification}
+\subsection{Models for Image Classification}
 \label{sub:image-classification}
 
 Image classification is one of the most fundamental and widely studied tasks in
-computer vision and describes the process of assigning a label $y \in \{y_1,
-\ldots, y_n\}$ to an image $x$. Extracting information from images to assign a
-label is not straight-forward, because of the high-dimensional and unstructured
-nature of images. These characteristics make it challenging for traditional
-heuristic-based algorithms to extract meaningful information, which has long
-limited the capabilities of computer vision systems. However, with the advent of
-deep learning and the introduction of a special type of neural network, called
-convolutional neural network (CNN), this has changed.
+computer vision and describes the process of assigning a discrete label $y \in
+\{y_1, \ldots, y_n\}$ to an image $x$. However, extracting information from
+images to assign a label is not straightforward because of the images'
+high-dimensional and unstructured nature. These characteristics make it
+challenging for traditional heuristic-based algorithms to extract meaningful
+information, which has long limited the capabilities of computer vision systems.
+However, this has changed with the advent of deep learning and the introduction
+of a particular type of neural network called convolutional neural network
+(CNN).
 
 \begin{figure}
   \begin{center}
@@ -256,7 +256,7 @@ convolutional neural network (CNN), this has changed.
 
 CNNs are a type of neural network specifically designed to process visual
 information. Traditionally, they are organised hierarchically and consist of
-convolutional, pooling and fully-connected layers, as shown in
+convolutional, pooling and fully connected layers, as shown in
 Figure~\ref{fig:cnn}. Convolutional layers are the core of CNNs and are
 responsible for extracting features from the input. Each convolutional layer
 consists of a set of filters, where each filter, sometimes called kernel $k$, is
@@ -274,9 +274,9 @@ ${i,j}$ (Equation: \ref{eq:2dconv}).
   \label{eq:2dconv}
 \end{equation}
 
-The output $z$ is a two-dimensional matrix, called feature-map. Within a single
+The output $z$ is a two-dimensional matrix called feature map. Within a single
 convolutional layer, multiple filters are applied to the input, which results in
-multiple feature-maps. After applying a non-linear activation to each feature
+multiple feature maps. After applying a non-linear activation to each feature
 map, they are stacked along the channel dimension to form the output of the
 convolutional layer, which is passed to the next layer. Pooling layers are often
 interleaved with convolutional layers to reduce the dimensionality of feature
@@ -286,25 +286,27 @@ sum, the pooling operation computes a statistic, such as the maximum (Max
 Pooling) or average (Average Pooling), of the values in the kernel.
 
 % why cnns work
-CNNs have been found to work specifically well for data with a spatial structure
-such as images, because convolutions model the inherent nature of images: While
-a stand-alone pixel is not as informative, the value of a pixel in the context
-of its neighbouring pixels is. This characteristic is naturally captured by the
-convolution operation. Furthermore, in sliding filters across the input, they
-can capture the same feature independently of its location in the image, which
-makes CNNs invariant to translation. This is a desirable property for image
-classification, as the location of features in an image may not be relevant for
-the final classification.
+CNNs have been found to work specifically well for data with a spatial
+structure, such as images because convolutions model the inherent nature of
+images: While a stand-alone pixel is not as informative, the value of a pixel in
+the context of its neighbouring pixels is. The convolution operation naturally
+captures this characteristic. Furthermore, sliding filters across the input, can
+capture the same feature independently of its location in the image, making CNNs
+invariant to translation. This is a desirable property for image classification,
+as the location of features in an image may not be relevant for the final
+classification.
 
 % why cnns work
-The first CNN-based architectures date back to the 1960s and have shown
-successes in simple image classification tasks~\cite{lenet}. However, it was not
-until 2012, when the CNN-based architecture AlexNet~\cite{alexnet} won the
-ImageNet Large Scale Visual Recognition Challenge (ILSVRC)~\cite{imagenet}, that
-CNNs arrived in the mainstream of computer vision. Since then CNNs have been
-proposed in various different forms, mostly differing in the network's structure
-and depth and the width and resolution of the filters. To this day, CNNs still
-rank amongst the top performing methods in image classification benchmarks.
+The first CNN-based architectures date back to the 1960s and have succeeded in
+simple image classification tasks~\cite{lenet}. However, it was not until 2012,
+when the CNN-based architecture AlexNet~\cite{alexnet} won the ImageNet Large
+Scale Visual Recognition Challenge (ILSVRC)~\cite{imagenet}, that CNNs arrived
+in the mainstream of computer vision. Since then CNNs have been proposed in
+various forms, mainly differing in the network's structure and depth and the
+width and resolution of the filters. To this day, CNNs still rank amongst the
+top-performing methods in image classification benchmarks.
+
+% TODO: transformers and vision transformers
 
 \begin{figure}
   \centering
@@ -322,11 +324,11 @@ rank amongst the top performing methods in image classification benchmarks.
   3D convolutional filters across an input. For visualisation purposes, a single
   channel is shown. A 2D convolutional filter (a) slides across the spatial
   dimension (height and width) of an input. A 3D convolutional filter (b) slides
-across the spatio-temporal dimension (height, width, and time) of an input.}
+across the spatiotemporal dimension (height, width, and time) of an input.}
   \label{fig:conv}
 \end{figure}
 
-\subsection{Video Classification}
+\subsection{Models for Video Classification}
 \label{sub:video-classification}
 
 Video classification can be seen as a generalisation of image classification:
@@ -334,28 +336,28 @@ Instead of assigning a label to a single image, video classifiers assign a label
 $y$ or a sequence of labels $y_1, \ldots, y_t$ to a video sequence $x = (x_1,
 \ldots, x_T)$, where $x_t$ is a frame of the video.
 
-The difference is subtle, yet important, because it introduces a temporal
-dimension to the task. It is generally assumed that the temporal dimension
-is critical for video classification, because it provides additional
-information about the video. For example, it might be difficult to determine
-whether a person is running or walking from a single frame, but trivial given
-the motion captured by a sequence of frames.
+The difference is subtle yet essential because it introduces a temporal
+dimension. It is generally assumed that the temporal dimension is critical for
+video classification because it provides additional information about the video.
+For example, it might be challenging to determine whether a person is running or
+walking from a single frame but trivial given the motion captured by a sequence
+of frames.
 
 Motivated by the need for a powerful model to capture the semantic content of
 video data and the success of CNNs in image classification, researchers have
 started to apply CNNs to video classification~\cite{videocnn, i3d, c3d, x3d,
-slowfast}, where the networks have access to the complex spatio-temporal
+slowfast}, where the networks have access to the complex spatiotemporal
 evolution of the video. Over the course of the last decade, various approaches
 based on CNNs have been proposed that exhibit different connectivity patterns
 for modelling the temporal dimension of the video~\cite{videocnn}.
 
 % naive solution: single frame with averaging
-A naive solution, which ignores the temporal dimension entirely, is to predict a
-label for each frame and then average the predictions. Despite their simplicity,
-these models have been shown to perform surprisingly well~\cite{videocnn}.
-Different methods for aggregation have been proposed, such as
-averaging~\cite{videocnn}, majority votes, or using a neural architectures, such
-as recurrent neural networks (RNNs) to learn the importance of each
+A naive solution ignores the temporal dimension entirely and predicts a label
+for each frame and then averages the predictions. Despite the simplicity of the
+approach, such models have been shown to perform surprisingly
+well~\cite{videocnn}. Different aggregation methods have been proposed, such as
+averaging~\cite{videocnn}, majority votes, or using a neural architecture, such
+as recurrent neural networks (RNNs), to learn the importance of each
 frame~\cite{lrcn} for the final prediction.
 
 % model temporal dimension directly through 3d convolutions
@@ -363,18 +365,19 @@ CNN-based architectures that model the temporal dimension directly usually
 leverage 3D convolutions~\cite{c3d, i3d}. 3D convolutions are a natural
 extension of 2D convolutions, as defined in
 Section~\ref{sub:image-classification}. Instead of sliding a convolutional
-filter across the spatial dimension of the input (Figure~\ref{fig:conv}a), a
-3D-convolutional filter slides across the spatio-temporal dimension of the input
-(Figure~\ref{fig:conv}b), which produces feature maps in spatio-temporal space
-that are learned jointly. 3D convolutions have been used in many different
-variants. Architectures range from pure 3D convolution networks~\cite{i3d, c3d}
-to hybrid architectures that combine 2D and 3D convolutions~\cite{x3d,
-slowfast}. Overall, it can be summarised that, despite the introduction of
-large-scale datasets for video classification~\cite{kinetics}, the research
-field has not yet converged to a consensus about the best approach for video
-classification.
+filter across the spatial dimension of the input, as shown in
+Figure~\ref{fig:conv}a, a 3D-convolutional filter slides across the
+spatiotemporal dimension of the input , illustrated in Figure~\ref{fig:conv}b),
+which produces feature maps in spatiotemporal space that are learned jointly. 3D
+convolutions have been used in many different variants. Architectures range from
+pure 3D convolution networks~\cite{i3d, c3d} to hybrid architectures that
+combine 2D and 3D convolutions~\cite{x3d, slowfast}. Overall, it can be
+summarised that, despite the introduction of large-scale datasets for video
+classification~\cite{kinetics}, the research field has not agreed on the best
+approach for video classification.
 
 \section{Data}
+\label{sec:data}
 
 To train a deep learning model for indoor localisation, a labelled dataset is
 required for training and evaluation. The following section describes the
@@ -387,64 +390,62 @@ therefore described separately.
 \label{sub:data-collection}
 
 % videos
-The raw video data was collected from a single camera of a mobile device at a
-frame rate of 30 FPS in high resolution ($2426\times 1125$). This process
-yielded a set of videos $V = \{v_1, ..., v_n\}$, where each video $v_i$ is a
-sequence of $k$ frames $f_1, ..., f_k$. Each frame $f_i$ is a RGB image with
-dimensions $3 \times 2426 \times 1125$. Exemplary frames from the video clips
-are shown in Figure~\ref{fig:frames} for illustration purposes.
-
+The raw video data was collected from a single mobile device camera at a frame
+rate of 30 FPS in high resolution ($2426\times 1125$). This process yielded a
+set of $n=53$ videos $V = \{v_1, ..., v_n\}$, where each video $v_i$ is a
+sequence of $k$ frames $f_1, ..., f_k$, and each frame is $f_i$ is an RGB image
+with dimensions $3 \times 2426 \times 1125$. The number of frames per video
+differs, with an average of $\sim$1700 frames per video, or 57 seconds. 
 
 \begin{figure}
   \begin{center}
-    \includegraphics[width=\textwidth]{./figures/frames.png}
+    \includegraphics[width=\textwidth]{./figures/raw-frames.png}
   \end{center}
-  \caption{}
-  \label{fig:frames}
+  \caption{\textbf{Raw Frames.} An example of the high-resolution ($2426\times
+    1125$) raw frames captured by the mobile device. The Figure shows five
+    frames that were extracted at a sampling rate of 3 frames per second (FPS)
+    from the original video sequence. The location is the green area on the
+  first floor (First Floor Green Area).}
+  \label{fig:raw-frames}
 \end{figure}
 
 The mobile device was hand-held by a human agent while walking around the main
 building of the Southern Campus of the Copenhagen University (Danish:
 K\o{}benhavns Universitet, KU) in Copenhagen S, Denmark. The location was deemed
 compatible with this study as it showcases distinctive learnable indoor features
-(e.g. coloured walls, characteristic architectural structures, etc.), but also
+(e.g. coloured walls, characteristic architectural structures) but also
 challenges the model, for example, due to areas that are visually similar to
-each other (like libraries and corridors). For the scope of this project, the
-data collection was limited to the first two floors. 
+each other (like libraries and corridors).
 
-
-
-% statistics of the data
-A total of $n=53$ videos of varying length were recorded, with an average
-duration of $\sim$57s, amounting to a total of $\sim$50 minutes of
-footage, or an equivalent of $\sim$90K frames. 
-
-
+Five exemplary frames from a single raw video are shown in
+Figure~\ref{fig:raw-frames} for illustration purposes.
 
 \subsection{Data Annotation} % (fold)
 \label{sub:data-annotation}
 
 % labels
 Each video $v_i$ is associated with a set of location labels $L = \{l_1, ...,
-l_n\}$, where each location label $l_i$ identifies the location of the agent t
-a specific time in the video. For the scope of this project 20 different
-location labels were considered, which are identified by a descriptive name and
-integer. Figure~\ref{fig:location-labels} shows the floor plan of the first two
-floors of the building, where each location class is mapped to a coloured
+l_n\}$, where each location label $l_i$ identifies an agent's location at a
+specific time in the video. For the scope of this project, a subset of the areas
+on the first two floors of the main building was considered and grouped into 20
+different location areas. Each area represents a class in the classification
+task and is identified by a descriptive name and integer.
+Figure~\ref{fig:location-labels} shows the floor plan of the first two floors of
+the building, where each considered location class is mapped to a coloured
 region. The location labels were assigned in close correspondence to the
-original floor plan. This, however, led to some classes being a lot larger than
-others, which is likely to result in a class imbalance. Annotation was performed
-manually by a single human agent. Because changes in the location labels only
-occur at the transition of rooms, the annotation process was simplified by
-annotating the starting and ending time stamps of a location label, which were
-later pre-processed to frame-by-frame annotations. 
+original floor plan. However, this led to some classes being a lot larger than
+others, resulting in a class imbalance. Annotation was performed manually by a
+single human agent. Because changes in the location labels only occur at the
+transition of rooms, the annotation process was simplified by annotating the
+starting and ending time stamps of a location label, which were later
+pre-processed to frame-by-frame annotations.
 
 % figure
 \begin{figure}
 \centering
 \includegraphics[width=\textwidth]{figures/location-labels.png}
 \caption{
-  \textbf{Location Labels.} The figure shows the floor plan for the ground floor
+  \textbf{Location Labels.} The Figure shows the floor plan for the ground floor
   (left) and first floor (right) of the main building of the Southern Campus of
   the Copenhagen University. The 20 location labels considered in this study are
   numbered and mapped to a coloured region on the floor plan.}
@@ -452,145 +453,137 @@ later pre-processed to frame-by-frame annotations.
 \label{fig:location-labels}
 \end{figure}
 
-
-% TODO: figure about the time of data collection (side-by-side, one where hue
-%       denotes the split and the other where hue denotes the clips per day)
-
 \subsection{Data Splits} % (fold)
 \label{sub:data-splits}
 
-Out of the total 53 videos that were recorded, 37 were used for training and 16
-were used for testing. Importantly, the videos in the training split were
-recorded in a single session, while the videos in the test split were recorded
-on four separated days, in a span of two to four weeks after the training data
-had been recorded. This was done to ensure that the models were tested against
-unseen data, to more accurately assess their generalisation capabilities.
-Indeed, the test data was recorded in different weather conditions, at different
-times of the day, with different lighting conditions and, by pure chance, one of
-the areas was repainted during the time between the recording of the training
-and test data. With all these changes in mind, the test data is expected to be
-as different from the training data, as it would be in a real-world scenario.
+Out of the total 53 videos that were recorded, 37 were used for training, and 16
+were used for testing. Notably, the videos in the training split were recorded
+in a single session. In contrast, the videos in the test split were recorded on
+four separate days, two to four weeks after the training data had been recorded.
+This ensured that the models were tested against unseen data to assess their
+generalisation capabilities more accurately. Indeed, the test data was recorded
+in different weather conditions, at different times of the day, with different
+lighting conditions. By pure chance, one of the areas was repainted during the
+time between the recording of the training and test data. With all these changes
+in mind, the test data is expected to be as different from the training data as
+it would be in a real-world scenario.
 
 
 \subsection{Data Processing} % (fold)
 \label{sub:data-processing}
 
-% extraction of frames in training and testing
-Single-frame classification models expect a single frame $f_i$ from a video
-$v_i$ as input. Technically, all frames in a video $v_i$ could be used as input,
-but because of the strong local correlation between adjacent frames, it was
-hypothesised that models would overfit to the training data. For this reason,
-and in an attempt to assimilate the single-frame and video datasets, frames from
-a video $v_i$ were sampled at a sampling rate fixed $r_f$. The sampling rate is
-not tied to the architecture of single-frame models and was therefore chosen
-globally to be $r_f=5$ for the training split. This means that only every 5th
-frame from the videos in the raw data split were used for training. A sampling
-rate was not adopted for the testing split, in order to test the model on the
-full set of frames.
+Both single-frame and video classification models expect an input-location pair
+for training. For single-frame models, an input is a frame tensor $f_i$ with
+dimension $3 \times h \times w$. For video classification models, an input is a
+clip tensor $c_i$ with dimension $s_v \times 3 \times h \times w$, where $s_v$
+is the number of frames in a clip. Both models expect a fixed input size and
+each frame to be standardised. While the standardisation and spatial
+downsampling of the frames is almost equivalent for both model groups, the
+temporal downsampling procedure had to be designed carefully to allow for proper
+comparison between the two model groups. Therefore, this section first explains
+the temporal downsampling of the frames for the two model groups individually
+and then jointly describes the spatial downsampling, standardisation, and
+location matching procedure. 
 
-% matching location
-Matching the location labels to each of the extracted frames was
-straight-forward. For each frame $f_i$ in a video $v_i$, the location label
-$l_i$ was found as the label currently active at the time of the frame. This was
-done by finding the location label $l_i$ that satisfied condition $t_{l_i} \leq
-t_{f_i} \leq t_{l_{i+1}}$, where $t_{l_i}$ and $t_{f_i}$ are the time stamps of
-the location label $l_i$ and frame $f_i$, respectively. This process yielded a
-set of single-frame samples $D_F = \{(f_1, l_1), ..., (f_{n_f}, l_{n_f})\}$ with
-$n_f=\sim 12K$ for the training split and $n_f=20K$ for the testing split.
+% video classifier
+\textbf{Temporal Downsampling.} A video classification model expects a single
+clip $c_i$ as input, which is a fixed-sized sequence of $s_v$ frames sampled
+from a video $v_i$ at a sampling rate $r_v$. A sampling rate is related but not
+equivalent to frames per second (FPS). A sampling rate of $r_v=5$ means that
+every fifth frame from a video $v_i$ was extracted, equivalent to $30/5=6$ FPS.
+Given this, the video dataset is constructed by extracting uniformly sampled
+clips from the videos. For example, the first clip $c_1$ is extracted from the
+frames $[f_1, f_{1+r_v}, f_{1+2r_v}, ..., f_{1+(s_v-1)r_v}]$. The second clip,
+$c_2$, follows the same pattern, and starts at frame $f_{1+(s_v-1)r_v+1}$, the
+immediate successor of the last frame of the first clip. Within this study,
+clips were extracted in a way that ensured that the location label $l_i$ is the
+same for all frames $f_i \in c_i$. 
+
+% single-frame
+For single-frame classifiers, all frames in a video $v_i$ could be used as
+input. However, because of the strong local correlation between adjacent frames,
+it was hypothesised that models would overfit the training data. For this
+reason, and in an attempt to assimilate the single-frame and video datasets, a
+fixed sampling rate of $r_f=5$ was used to downsample the temporal dimension of
+the training data split. However, a sampling rate was not
+adopted for the test split to test the model on the full set of frames.
+
+Figure~\ref{fig:temporal-downsampling} illustrates the temporal downsampling
+process for both the single-frame and video datasets on a small, illustrative
+example and highlights that because of the difference in sampling rates, the
+extracted frames can differ between the two datasets. 
 
 \begin{figure}
-\centering
-\includegraphics[width=0.95\textwidth]{figures/data-extraction.png}
-\caption{
-  \textbf{Data Extraction.} A raw video with $k=10$ frames is processed into
-  $k_f=5$ frames for the single-frame dataset and $k_v=2$ clips for the
-  video dataset. Samples for each dataset type are indicated by a
-  surrounding box. Frames are sampled at a rate of $r_f=2$ for the
-  single-frame dataset and $r_v=3$ for the video dataset. A clip contains
-  $s_v=2$ frames. Frames are colour-coded in correspondence to the dataset
-  they belong to (single-frame dataset in purple and video dataset in blue),
-  if they are sampled to the respective dataset. Discarded frames are
-  coloured in grey (light-grey for within video frames, dark-grey for
-  trailing frames).}
-\label{fig:data-extraction}
+  \centering
+  \includegraphics[width=\textwidth]{figures/temporal-downsampling.png}
+  \caption{\textbf{Temporal Downsampling.} An illustration of the temporal
+    downsampling process for the single-frame and video datasets to illustrate
+    the concept of sampling rates ($r_f$/$r_v$). The same selection of frames as
+    in Figure~\ref{fig:raw-frames} is used. For the single-frame dataset, frames
+    are sampled at a rate of $r_f=2$ (every other frame), resulting in a total
+    of $n_f=3$ frames. For the video dataset, frames are sampled at a rate of
+    $r_v=3$ (every third frame), and a clip (illustrated by a surrounding
+    light-green box) consists of $s_v=2$ frames. Frames that are not sampled into
+    the dataset are visualised in greyscale.} 
+  \label{fig:temporal-downsampling}
 \end{figure}
 
+% spatial downsampling
+\textbf{Spatial Downsampling.} The spatial downsampling of the frames was done
+by resizing the frames to a fixed size of $h \times w$ pixels. The height and
+width of the input frames are tied to the model architecture and are individual
+to each model. However, the input frames are typically square, with a side
+length of between $h=w=182$ or $h=w=224$ pixels. Resizing was performed
+non-aspect-preserving to compress as much of the original viewport as possible
+into the resized frame.
 
-A video classification model expects a single clip $c_i$ as input, which is a
-fixed-sized sequence of $s_v$ frames sampled from a video $v_i$ at a sampling
-rate $r_v$. For this reason, the video classification dataset is constructed by
-extracting clips from the videos in the raw data split. Clips are extracted in
-uniformly spaced intervals. Within this study only non-overlapping clips were
-considered, meaning that in a single clip $c_i$, the location label $l_i$ is the
-same for all frames $f_i \in c_i$. This is a simplification of the problem, as
-it is possible for a person to move from one location to another within a single
-clip, but was found more compatible with existing video classification
-architectures. In reality, the simplification is viable, because during the
-relatively small clip duration of $\sim 2$s, transitions between locations only
-occur in a small subset of clips.
+% standardisation
+\textbf{Standardisation.} Finally, the individual frames were standardised. An
+RGB image is a three-dimensional tensor where each element represents the
+intensity of a single colour channel at a single pixel location in the range
+$[0, 255]$. Because neural networks are sensitive to the scale of the input
+data, the intensity values of the frames were first scaled to the range $[0, 1]$
+and then normalised to have a mean of $0$ and a standard deviation of $1$. The
+standardisation was performed on a per-channel basis, meaning that a colour
+channel $x_c$ of a frame $x$ was standardised as,
 
-Because clips do not overlap multiple location labels, each clip $c_i$ can be
-associated with a single location label $l_i$. The location label $l_i$ is found
-as the location label present during the entire time span of the clip. This
-process yielded a set of clip-location samples $D_V = \{(c_1, l_1), ...,
-(c_{n_v}, l_{n_v})\}$.
+\begin{equation}
+  x_{c}' = \frac{x_{c} - \mu_c}{\sigma_c}, \quad c \in \{R, G, B\},
+\end{equation}
 
-% TODO: add resizing and standardisation of channels
+where $x_{c}'$ and $x_c$ represent all pixels of the colour channel $c$ of the
+standardised and original frame $x$, respectively. $\mu_c$ and $\sigma_c$ are
+the mean and standard deviation of the colour channel $c$ across all pixels from
+the dataset. Because all models were fine-tuned, the mean and standard deviation
+were not computed from the video location dataset but instead taken from the
+respective pre-training dataset, ImageNet~\cite{imagenet} and
+Kinetics~\cite{kinetics} for the single-frame and video datasets, respectively.
 
-% \subsubsection{Dataset Comparison} % (fold)
-% 
-% The extraction of clips and frames for video and single-frame classification
-% models, respectively, is illustrated in Figure~\ref{fig:data-extraction}. It
-% shows that, despite the common raw data source, the frames considered in the two
-% datasets may not be the same. This is because of different sampling rates and
-% because adjacent clips reset the sampling rate. 
-% 
-% Assuming a single video $v_i$ with $k$ frames, the number of frames $k_f$ that
-% can be sampled from $v_i$ at a sampling rate $r_f$ is $k_f = \lfloor k / r_f
-% \rfloor$. The number of clips $k_v$ that can be sampled from $v_i$ at a sampling
-% rate $r_v$ is $k_v = \left\lfloor \frac{k}{r_v \cdot s_v} \right\rfloor \cdot
-% s_v$. 
-% 
-% It becomes clear, that
-% 
-% 
-% \[
-%   \left\lfloor \frac{k}{r_v \cdot s_v} \right\rfloor \cdot s_v \approx
-%   \left\lfloor \frac{k}{r_f} \right\rfloor, \quad \text{if} \quad r_v = r_f.
-% \]
-% 
-% For this reason, the sampling rate $r_f$ for the single-frame dataset was chosen
-% to be an as close as possible to the sampling rates of video classifiers. As
-% multiple video classifiers considered in this study have different sampling
-% rates ranging from $2$ to $8$, the sampling rate $r_f$ was chosen to be $5$.
-% 
-% This choice does not ensure that the two datasets are identical, but it ensures
-% that the total number of frames in each dataset is similar, which means that
-% all models visit similarly many frames during training.
-% 
-% Furthermore, it was hypothesised, that due to the large number of total frames
-% and strong local correlation between adjacent frames, the two datasets are
-% sufficiently similar to allow for comparison between the two model types.
+% matching location
+\textbf{Location Matching.} Associating a frame $f_i$ or a clip $c_i$ with a
+location label $l_i$ was trivial. Because the timestamp of extraction of each
+frame and the location label is known, the location label $l_i$ of a frame $f_i$
+is the location label present at the time of extraction of the frame. Similarly,
+because clips do not overlap multiple location labels, a clip $c_i$ can safely
+be associated with the location label $l_i$ present at the time of extraction of
+the clip's first frame.
 
-% TODO: add statistics about nf and nv (number of frames and clips in train
-% and test)
-
-% subsection data-preprocessing (end)
+All of the above steps yielded the two datasets $D_F$ and $D_V$, for the
+single-frame and video classification tasks, respectively.
 
 \section{Methodology} % (fold)
 \label{sec:methodology}
 
-To assess the capabilities of different deep learning models, the study follows
-a standardised methodology. First, a self-gathered dataset is collected,
-annotated and preprocessed according to the specification of the problem
-setting. Next, a series of deep learning models are selected and trained under
-constant conditions on the same dataset and evaluated using a collection of
-commonly used metrics for performance and efficiency. Finally, the results are
-analysed in order to discuss the applicability of deep learning models for
-indoor localisation.
+The study follows a standardised methodology to assess the capabilities of
+different deep learning models. As seen, first a self-gathered dataset is
+collected, annotated and preprocessed according to the specification of the
+problem setting. Next, a series of deep learning models are selected and trained
+under constant conditions on the same dataset and evaluated using commonly used
+metrics for performance and efficiency. Finally, the results are analysed to
+discuss the applicability of deep learning models for indoor localisation.
 
 One major distinction between the different models is whether or not they
-operate on a single-frame or a sequence of frames. Because this distinction
+operate on a single frame or a sequence of frames. Because this distinction
 impacts all steps of the study, from data processing to model evaluation, the
 following two different problem settings are distinguished throughout the entire
 study:
@@ -610,8 +603,7 @@ study:
 \label{sub:models}
 
 
-Following the literature on single-frame and video classification tasks, twelve
-different models were trained and evaluated in this work. Following the
+Twelve different models were trained and evaluated in this work. Following the
 distinction made in Section~\ref{sec:methodology}, the models are grouped into
 single-frame and video classification models. 
 
@@ -633,16 +625,16 @@ model.
 \begin{table}
   \centering
   \caption{
-    \textbf{Model Overview.} The table shows all models that were evaluated in
+    \textbf{Model Overview.} The Table shows all models that were evaluated in
     this work. The models are split into two categories: single-frame models and
-    video models. For each model, the table reports the release year (Release),
+    video models. For each model, the Table reports the release year (Release),
     the frame rate (Rate) of the training data, the number of frames per clip
     (F/C; \textit{only applicable to video classifiers}), the spatial resolution
     (Size) of the input images, the number of parameters in millions (Params),
     the number of floating point operations in billions (FLOPs) and the
     benchmark Top-1 accuracy (Acc\@1) on ImageNet~\cite{imagenet} for
     single-frame classification models and the Top-1 accuracy on the
-    Kinetics~\cite{kinetics} dataset for video classification models. The table
+    Kinetics~\cite{kinetics} dataset for video classification models. The Table
     is sorted by release date within each group.
   }
   \begin{tabular}{cllllllll}
@@ -675,14 +667,13 @@ model.
 
 \subsubsection{Single-Frame Classifiers} % (fold)
 
-\textbf{Alexnet}~\cite{alexnet} is a convolutional neural network that was
-introduced by Krizhevsky \textit{et al.} in 2012. It was the first deep neural
-network to win the ImageNet Large Scale Visual Recognition
-Challenge~\cite{imagenet} and is considered to be one of the first successful
-applications of deep learning to image classification. Architecturally, it
-consists of five convolutional layers with occasional max-pooling layers in
-between, followed by three fully connected layers, as illustrated in
-Figure~\ref{fig:alexnet}.
+\textbf{Alexnet}~\cite{alexnet} is a convolutional neural network introduced by
+Krizhevsky \textit{et al.} in 2012. It was the first deep neural network to win
+the ImageNet Large Scale Visual Recognition Challenge~\cite{imagenet} and is
+considered one of the first successful applications of deep learning to image
+classification. Architecturally, it consists of five convolutional layers with
+occasional max-pooling layers in between, followed by three fully connected
+layers, as illustrated in Figure~\ref{fig:alexnet}.
 
 \begin{figure}
   \centering
@@ -708,13 +699,13 @@ Figure~\ref{fig:alexnet}.
 % the number of parameters in the network and win the ImageNet Large Scale
 % Visual Recognition Challenge~\cite{imagenet} in 2014.
 
-After the success of AlexNet, the speed of research in the field of deep neural
-networks significantly picked up. Networks with increasing depth, such as
-VGG~\cite{vgg}, were found to perform better, but led to new research problem:
-As information about the input or gradient passes through many layers, it can
-vanish during gradient-descent based learning, leading to a stagnation during
-training. The phenomenon of "vanishing gradients" was visible in larger training
-errors for deeper networks, and coined the "degradation" problem~\cite{resnet}. 
+After the success of AlexNet, the speed of research in deep neural networks
+significantly picked up. Networks with increasing depth, such as VGG~\cite{vgg},
+were found to perform better  but led to a new research problem: As information
+about the input or gradient passes through many layers, it can vanish during
+gradient-descent based learning, leading to stagnation during training. The
+phenomenon of "vanishing gradients" was visible in larger training errors for
+deeper networks and coined the "degradation" problem~\cite{resnet}. 
 
 The \textbf{ResNet}~\cite{resnet} architecture is considered a cornerstone of
 modern deep learning history as it introduced the concept of residual
@@ -725,31 +716,31 @@ of this identify mapping to the output of the subnetwork was shown to facilitate
 signal propagation in forward and backward paths, and, in connection with batch
 normalisation~\cite{batchnorm}, allowed to train networks of unprecedented
 length. The original paper introduced several architectures with different
-depths, but in this work only ResNet18 and ResNet50, with 18 and 50 layers
+depths, but in this work, only ResNet18 and ResNet50, with 18 and 50 layers,
 respectively, are considered.
 
 \begin{figure}
   \centering
   \includegraphics[width=0.8\textwidth]{./figures/resnet.png}
   \caption{\textbf{Residual Connection.} An illustration of a generic residual
-  block, as defined by He \textit{et al.}~\cite{resnet}. A subnetwork of $L=2$ layers
-  (consisting of convolution, batch normalization and ReLU layers) is applied to
-  an input $x_0$. The first layer produces an output $x_1$, and the second layer
-  an output $x_2$. The output of the residual block is given by $x_2+x_0$
-  through the skip connection.
-  }
+    block, as defined by He \textit{et al.}~\cite{resnet}. A subnetwork of $L=2$
+    layers (consisting of convolution, batch normalization and ReLU layers) is
+    applied to an input $x_0$. The first layer produces an output $x_1$, and the
+  second layer an output $x_2$. The output of the residual block is given by
+$x_2+x_0$ through the skip connection.}
   \label{fig:residual-connection}
 \end{figure}
 
 \textbf{DenseNets}~\cite{densenet} extend the idea of residual connections. At
 the core of the DenseNet architecture is the concept of "dense blocks": Similar
-to a residual block, it is a subnetwork of $L$ layers denoted as $H_l$. Unlike
-the residual block, each layer in the dense block receives the concatenation of
-all preceding layer outputs as an input, such that $x_l = H_l([x_0, x_1, \dots,
-x_{l-1}])$. Dense blocks are compute intensive, but the strong connectivity
-between layers support feature reuse, which allowed the architecture to be
-shallower than predecessors. Again, the authors introduced several architectures
-with different depths. Here, only DenseNet 121 is considered.
+to a residual block, it is a subnetwork of $L$ layers denoted as $H_l$. However,
+unlike the residual block, each layer in the dense block receives the
+concatenation of all preceding layer outputs as an input, such that $x_l =
+H_l([x_0, x_1, \dots, x_{l-1}])$. Dense blocks are compute-intensive, but the
+strong connectivity between layers supports feature reuse, which allows the
+architecture to be shallower than its predecessors. Again, the authors
+introduced several architectures with different depths. Here, only DenseNet 121
+is considered.
 
 \begin{figure}
   \centering
@@ -766,49 +757,49 @@ with different depths. Here, only DenseNet 121 is considered.
 \end{figure}
 
 \textbf{MobileNet V3}~\cite{mobilenetv3} is the third iteration of the MobileNet
-architecture, which was introduced by Howard \textit{et al.} 2019. The main contribution
-of MobileNets are so-called depth-wise separable convolutions. A depth-wise
-separable convolution factorises a regular 2D convolution into two separate
-steps: First, a single 2D filter is applied to each input channel separately,
-and then a 1x1 convolution is applied to the output of the previous step. This
-architectural change makes MobileNets significantly more efficient with only
-minor performance losses, which made them popular for application on low-compute
-devices, like mobile phones. MobileNet V3 is the most recent iteration of the
-architecture, and its smallest variant, MobileNet V3 Small, is used in this
-work.
+architecture, which was introduced by Howard \textit{et al.} in 2019. The main
+contribution of MobileNets is the introduction of depth-wise separable
+convolutions. A depth-wise separable convolution factorises a regular 2D
+convolution into two separate steps: First, a single 2D filter is applied to
+each input channel separately, and then a 1x1 convolution is applied to the
+output of the previous step. This architectural change makes MobileNets
+significantly more efficient with only minor performance losses, which made them
+popular for application on low-compute devices like mobile phones. MobileNet V3
+is the most recent iteration of the architecture, and its smallest variant,
+MobileNet V3 Small, is used in this work.
 
 \textbf{EfficientNet V2}~\cite{efficientnetv2}, proposed by Tan \textit{et al.}
-in 2021, is searching for a compute-optimal CNN architecture. The main finding
-of the paper is a scaling law, which states that for a given baseline network,
-e.g. scaling up a network's depth, width and resolution with a constant factor
-leads to improved performance and efficiency. In the original paper the authors
-scale up previous state-of-the-art models like ResNet and MobileNet, which
-showcase state-of-the-art performance, which make up a new family of models
-called EfficientNets. Here, EfficientNet V2 S is used, which is the smallest
-variant of the EfficientNet V2 family.
+in 2021, is searching for a compute-optimal CNN architecture. The paper's main
+finding is a scaling law, which states that for a given baseline network, e.g.
+scaling up a network's depth, width and resolution with a constant factor leads
+to improved performance and efficiency. In the original paper, the authors scale
+up previous state-of-the-art models like ResNet and MobileNet, which showcase
+state-of-the-art performance and make up a new family of models called
+EfficientNets. Here, EfficientNet V2 S is used, which is the smallest variant of
+the EfficientNet V2 family.
 
 With the ground-breaking paper "Attention is all you need"~\cite{transformer},
 Vaswani \textit{et al.} introduced the Transformer architecture in 2017.
-Although being initially designed for machine translation, the architecture was
-quickly adapted to other tasks in the domain of natural language processing,
+Although initially designed for machine translation, the architecture was
+quickly adapted to other tasks in natural language processing,
 superseding previous state-of-the-art models on various benchmarks. 
 
 In 2020, \textbf{Vision Transformer}~\cite{vit} was introduced as one of the
-first Transformer-based model adapted for the computer vision tasks. The main
+first Transformer-based models adapted for computer vision tasks. The main
 contribution of the model is the patch embedding mechanism, which overcomes the
 architectural mismatch between the two-dimensional input of images and the
 one-dimensional input of Transformer architectures. Dosovitskiy \textit{et al.}
-propose to split a two-dimensional image into a sequence of fixed-sized
-patches, which are then flattened and embedded into a sequence of "tokens".
-Together with positional encodings for the position of the patch in the original
-image, this sequence of tokens can be fed into a regular Transformer
-architecture. The authors introduce several configurations of the architecture.
-In this work, the base Vision Transformer, ViT-B-16, which is among the smaller
-variants of the model is used.
+propose to split a two-dimensional image into a sequence of fixed-sized patches,
+which are then flattened and embedded into a sequence of "tokens". Together with
+positional encodings for the position of the patch in the original image, this
+sequence of tokens can be fed into a regular Transformer architecture. The
+authors introduce several configurations of the architecture. In this work, the
+base Vision Transformer, ViT-B-16, which is among the models' smallest variants,
+is used.
 
 Since then, many variants of the Vision Transformer have been proposed. They
 either decrease the computational complexity of the architecture~\cite{deit,
-vitlite}, or improve the performance by recovering some of the inherent
+vitlite} or improve the performance by recovering some of the inherent
 architectural advantages of convolutional neural networks~\cite{swin}. However,
 these architectures are not considered in this work.
 
@@ -818,46 +809,44 @@ proposed by Liu \textit{et al.}~\cite{convnext} in 2021. Against the trend of
 Transformer-based architectures in computer vision tasks, ConvNext is a pure
 convolutional architecture. ConvNext uses the ResNet 50~\cite{resnet}
 architecture as a baseline and performs gradual modernisation steps, ranging
-from different optimisation algorithms, filter dimension to network depth and
-width. The authors show that the resulting convolutional architecture is
-competitive with the Transformer-based architectures, and coined in ConvNext.
+from different optimisation algorithms and filter dimensions to network depth
+and width. The authors show that the resulting convolutional architecture is
+competitive with the Transformer-based architectures. Within this study,
+ConvNext Tiny, which is the smallest variant of the ConvNext family, is used.
 
 \subsubsection{Video Classifiers} % (fold)
 
 Early attempts of using 3D convolutional filters for video classification
 tasks~\cite{i3d, c3d} show potential for modelling the temporal dimension of
 video data. However, the authors also show that simple single-frame models
-perform surprisingly well, and that the temporal dimension only provides
-marginal gains. This finding and the fact that one would expect the temporal
-information and motion patterns that emerge in sequences of images to be
-important for video motivated Tran et. al to investigate different architectural
+perform surprisingly well and that the temporal dimension only provides marginal
+gains. This finding motivated Tran et. al to investigate different architectural
 designs for video classification tasks. They contrast regular 3D convolution,
 mixed 2D and 3D convolution, 3D convolution and 3D convolution with factorised
 filters, which they coin \textbf{R(2+1)D}~\cite{r2plus1d}. They find that the
-R(2+1)D architecture improves the performance on the Kinetics dataset by a
-noticeable margin. 
+R(2+1)D architecture improves the performance in benchmarks, such as the
+Kinetics dataset, by a noticeable margin. 
 
 In the same year, Feichtenhofer \textit{et al.}~\cite{slowfast} proposed
-\textbf{SlowFast}~\cite{slowfast}, which introduces a two-stream architecture
-for video classification tasks. SlowFast has two separate pathways for
-processing video data. The first pathway, the slow pathway, processes the video
-data at a low frame rate, which allows it to capture the spatial information of
-the video data. The second pathway, the fast pathway, processes the video data
-at a high frame rate, which allows it to capture the temporal information of the
-video data. The authors show that the combination of the two pathways improves
-the performance over single-stream architectures. In this study, both the
-single-stream slow architecture \textbf{Slow R50} and the two-stream
-architecture \textbf{SlowFast R50} are considered.
+\textbf{SlowFast}~\cite{slowfast}, a two-stream architecture for video
+classification tasks. SlowFast has two separate pathways for processing video
+data. The first pathway, the slow pathway, processes the video data at a low
+frame rate, which allows it to capture the spatial information of the video
+data. The second pathway, the fast pathway, processes the video data at a high
+frame rate, which allows it to capture the temporal information of the video
+data. The authors show that combining the two pathways improves performance over
+single-stream architectures. This study considers both the single-stream slow
+architecture \textbf{Slow R50} and the two-stream architecture \textbf{SlowFast
+R50}.
 
-Finally, the \textbf{X3D} architecture reviews the design choices of previous
-architectures that were proposed. The authors find that previous approaches
-differ mainly by varying the temporal dimension (frame rate and number of
-frames) and the spatial dimension (resolution, depth and width of filters).
-Jointly studying the effects of scaling the temporal and spatial dimensions, the
-authors propose a family of architectures that gradually scales up the depth,
-width and resolution of the network, while keeping the computational complexity
-constant. In this work, the smallest variant of the X3D family, X3D S,
-is used.
+Finally, the \textbf{X3D} architecture reviews the design choices of previously
+proposed architectures. The authors find that previous approaches differ mainly
+by varying the temporal dimension (frame rate and number of frames) and the
+spatial dimension (resolution, depth and width of filters). Jointly studying the
+effects of scaling the temporal and spatial dimensions, the authors propose a
+family of architectures that gradually scales up the network's depth, width and
+resolution , while keeping the computational complexity constant. In this work,
+the smallest variant of the X3D family, X3D S, is used.
 
 % subsection models (end)
 
@@ -874,11 +863,11 @@ high-performance cluster (HPC; Appendix~\ref{sub:machine-specs}) of the IT
 University of Copenhagen using GPU-accelerated training. 
 
 All models were optimised to minimise the cross-entropy loss function
-$\mathcal{L}$ (Equation \ref{eq:cross-entropy}), 
+$\mathcal{L}$ as
 
 \begin{equation}
-  \mathcal{L}(\hat{\mathbf{y}},\mathbf{y}) = -\sum_{i=1}^{L} \mathbf{y}_i
-  \log(\hat{\mathbf{y}}_i) \quad ,
+  \mathcal{L}(\hat{y},y) = -\sum_{i=1}^{L} y_i
+  \log(\hat{y}_i) \quad ,
   \label{eq:cross-entropy}
 \end{equation}
 
@@ -887,9 +876,8 @@ $\mathcal{L}$ (Equation \ref{eq:cross-entropy}),
 
 % TODO: models are all fine-tuned
 
-
-where $\hat{\mathbf{y}}$ is the predicted probability distribution over the $L$
-location labels, and $\mathbf{y}$ is the one-hot encoded ground truth location
+where $\hat{y}$ is the predicted probability distribution over the $L$
+location labels, and $y$ is the one-hot encoded ground truth location
 label for a single frame or video. The function penalises the model for
 predicting a low probability for the ground truth label. For the models to learn
 the relationship between frames/ clips and location labels, the gradient of the
@@ -910,7 +898,7 @@ trained for 15 epochs, while the single-frame models were trained for 10 epochs.
 A series of performance and efficiency metrics are computed to assess all models
 in terms of their performance and efficiency. All metrics are computed on the
 test split, separated from the original dataset before training, as
-described in Section~\ref{sub:raw-data}.
+described in Section~\ref{sec:data}.
 
 \textbf{Quantifying Performance.} In the context of indoor location
 classification, a model is considered to perform well if it is able to
@@ -938,20 +926,32 @@ Furthermore, the Macro F1-score is computed. The F1 score
 (Equation~\ref{eq:f1-score}) is a class-specific metric that measures the
 harmonic mean of precision and recall. The precision $P_i$ of a classifier
 towards some class $i$ can be interpreted as the probability that a sample
-classified as class $i$ is actually from class $i$. The recall $R_i$ is the
-probability that a sample from class $i$ is classified as class $i$. High
-precision and recall values are desirable, so an ideal classifier would have
-high precision and recall. The F1-score is a way to combine both metrics into a
-single metric by computing their harmonic mean.
+classified as class $i$ is actually from class $i$, and can be written as
 
 \begin{equation}
-  P_i = \frac{TP_i}{TP_i + FP_i} \quad , \quad R_i = \frac{TP_i}{TP_i + FN_i}
-  \quad , \quad F1_i = \frac{2 \cdot P_i \cdot R_i}{P_i + R_i} \quad ,
+  P_i = \frac{TP_i}{TP_i + FP_i} \quad.
+  \label{eq:precision}
+\end{equation}
+
+The recall $R_i$ is the probability that a sample from class $i$ is classified
+as class $i$, and can be written as
+
+\begin{equation}
+  R_i = \frac{TP_i}{TP_i + FN_i} \quad.
+  \label{eq:recall}
+\end{equation}
+
+High precision and recall values are desirable, so an ideal classifier would
+have high precision and recall. The F1-score is a way to combine both metrics
+into a single metric by computing their harmonic mean, as
+
+\begin{equation}
+  F1_i = \frac{2 \cdot P_i \cdot R_i}{P_i + R_i} \quad .
   \label{eq:f1-score}
 \end{equation}
 
 Finally, the Macro F1-score (Equation~\ref{eq:macro-f1-score}) is computed by
-averaging the F1-scores for each location label.
+averaging the F1-scores for each location label, as
 
 \begin{equation}
   \text{Macro F1-score} = \frac{1}{L} \sum_{i=1}^{L} F1_i \quad .
@@ -1025,17 +1025,17 @@ efficiency of the different models are presented in Table~\ref{tab:results} and
 discussed in the following.
 
 \begin{table}
-  \caption{ \textbf{Results.} The table shows the performance and efficiency
+  \caption{ \textbf{Results.} The Table shows the performance and efficiency
     metrics for all trained models. The models are grouped by their type
     (single-frame or video). The performance metrics are the Top-1 accuracy
     (Acc@1), Top-3 accuracy (Acc@3) and Macro F1-Score (Ma.-F1). The efficiency
     metrics are the number of floating point operations (FLOPs) per inference,
     the mean inference time in milliseconds per prediction (Latency) and the
     mean number of predictions per second (Throughput). The best-performing and
-    worst-performing model is highlighted in green and red, respectively. The
-    metrics are computed on the test split of the respective dataset.
-    \textit{SlowFast R50 could not be benchmarked because of limitations of the
-    \texttt{PyTorch Benchmark} library.}
+    worst-performing model in each category is highlighted in \posHi{green} and
+    \negHi{red}, respectively. The metrics are computed on the test split of the
+    respective dataset. \textit{SlowFast R50 could not be benchmarked because of
+    limitations of the \texttt{PyTorch Benchmark} library.}
 }
 
   \begin{tabular}{cllll|llll}
@@ -1127,7 +1127,7 @@ predictions in 2.85\% of all cases.
 
 \begin{figure}
   \begin{center}
-    \includegraphics[width=.95\textwidth]
+    \includegraphics[width=.8\textwidth]
     {./figures/performance-metrics.png}
   \end{center}
 
@@ -1220,30 +1220,33 @@ architectures, they exhibit similar confusion patterns.
     for (a) ConvNext Tiny and (b) R(2+1)D. The confusion matrix of ConvNext Tiny
     is normalised by a factor of 1/1000 for visual purposes. For both matrices,
     the entry at row $i$ and column $j$ shows the number of samples that belong
-  to class $i$ but were predicted to be class $j$. Gray rectangles indicate
-challenging subsets of classes, that are often confused. These are displayed in
-more detail in Figure~\ref{fig:conf-matrix-challenging}. }
+    to class $i$ but were predicted to be class $j$. Gray rectangles indicate
+    challenging subsets of classes, that are often confused. These are displayed
+    in more detail in Figure~\ref{fig:conf-matrix-challenging} and discussed in
+    detail in Section~\ref{sub:mispredictions}.}
   \label{fig:conf-matrix}
 \end{figure}
 
 % confuses visually similar classes
 Both models show a tendency to confuse visually similar classes. The first
 example is the two corridors on the ground floor (Ground Floor Corridor 1 and
-Ground Floor Corridor 2) and the atrium (Ground Floor Atrium). The corridor's
-architecture, interior design and lighting are very similar, making it more
-challenging for both models to distinguish between the two.
-Figure~\ref{fig:conf-matrix-challenging}a shows the confusion between these
-classes for both models in detail. ConvNext Tiny tends to predict the atrium
-instead of the second corridor and regularly mixes up the two corridors. R(2+1)D
-is less prone to confusing the two corridors but also mispredicts the second
-corridor as the atrium in a few instances.
+Ground Floor Corridor 2, represented by letter L and M in
+Figure~\ref{fig:conf-matrix}) and the atrium (Ground Floor Atrium, letter K in
+Figure~\ref{fig:conf-matrix}). The corridor's architecture, interior design and
+lighting are very similar, making it more challenging for both models to
+distinguish between the two. Figure~\ref{fig:conf-matrix-challenging}a shows the
+confusion between these classes for both models in detail. ConvNext Tiny tends
+to predict the atrium instead of the second corridor and regularly mixes up the
+two corridors. R(2+1)D is less prone to confusing the two corridors but also
+mispredicts the second corridor as the atrium in a few instances.
 
 A second example is the three libraries (First Floor Library 1, First Floor
-Library 2 and First Floor Library 2). The libraries are visually similar, as
-they share similar characteristics, like bookshelves, tables and chairs.
-Figure~\ref{fig:conf-matrix-challenging}b shows the confusion between these
-classes for both models. ConvNext Tiny is more capable of differentiating the
-three libraries but still confuses the first and second libraries. Weirdly,
+Library 2 and First Floor Library 3, represented by letters D, E and F,
+respectively in Figure~\ref{fig:conf-matrix}). The libraries are visually
+similar, as they share similar characteristics, like bookshelves, tables and
+chairs. Figure~\ref{fig:conf-matrix-challenging}b shows the confusion between
+these classes for both models. ConvNext Tiny is more capable of differentiating
+the three libraries but still confuses the first and second libraries. Weirdly,
 R(2+1)D cannot differentiate between the libraries and predicts the second
 library naively. This might be, because it is the most commonly occurring
 library in the training data, and the model is therefore biased towards this
@@ -1266,7 +1269,7 @@ the models tend to predict the majority class in cases of uncertainty.
     \caption{Libraries}
   \end{subfigure}
   \caption{
-    \textbf{Common Misprediction Patterns.} The figure shows subsets of the
+    \textbf{Common Misprediction Patterns.} The Figure shows subsets of the
     confusion matrices that highlight classes that are commonly confused by
     ConvNext Tiny (left) and R(2+1)D (right). Figure (a) shows the confusion
     between the two corridors on the ground floor and the Atrium. Figure (b)
@@ -1276,7 +1279,7 @@ the models tend to predict the majority class in cases of uncertainty.
 \end{figure}
 
 \subsubsection{Misprediction Cases} % (fold)
-\label{sub:mispredictons}
+\label{sub:mispredictions}
 
 Exemplary mispredictions are analysed for both models confirm the above
 findings. Figure~\ref{fig:mispredictions} displays six exemplary mispredictions
@@ -1492,10 +1495,11 @@ navigation or augmented reality applications.
 All code and data used in this project is available on
 \href{https://github.com/mikasenghaas/bsc}{GitHub}. The project's
 \texttt{README} file contains detailed instructions on how to reproduce the
-results of this project.
+results of this project or just try out some of the trained models on an example
+video clip locally.
 
-Further, the precise configuration and results of the experiments that are
-reported here are publicly available as a public
+Further, the precise configuration, results and training logs of all experiments
+are available through the public
 \href{https://wandb.ai/mikasenghaas/bsc}{Weights \& Biases} experiments.
 
 % subsection reproducibility (end)
@@ -1503,11 +1507,9 @@ reported here are publicly available as a public
 \subsection{Machine Specifications} % (fold)
 \label{sub:machine-specs}
 
-Table~\ref{tab:machine-specs} lists the two machines, alongside relevant
-specifications, that were used for training and evaluation of the models.
-The HPC cluster was used for training and evaluation of all models. Analyses
-and visualisations were performed on the local machine, as well as running the
-real-time inference demo. 
+Table~\ref{tab:machine-specs} lists relevant hardware specifications of the
+remote server, that was used for training, evaluation and benchmarking of all
+models.
 
 \begin{table}[ht]
   \centering
