@@ -1,5 +1,9 @@
 # Custom
 
+# Delete LFS
+*.zip
+*.ptl
+
 # Ignore Directories
 models
 artifacts
